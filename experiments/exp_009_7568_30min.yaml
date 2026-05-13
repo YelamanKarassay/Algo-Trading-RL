@@ -2,7 +2,7 @@ inherits: _baseline.yaml
 name: exp_009_7568_30min
 description: Tier 2 grid cell for 7568.HK, a 3x leveraged FTSE A50 ETF, at 30-minute interval.
 data:
-  path: data/raw/7568_HK_30min.csv
+  path: data/raw/webull_7568_hk_m30.csv
   symbol: 7568.HK
 market:
   decision_times: ["10:00", "10:30", "11:00", "11:30", "13:30", "14:00", "14:30", "15:00", "15:30"]

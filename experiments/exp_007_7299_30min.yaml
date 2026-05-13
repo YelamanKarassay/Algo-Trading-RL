@@ -2,7 +2,7 @@ inherits: _baseline.yaml
 name: exp_007_7299_30min
 description: Tier 2 grid cell for 7299.HK, a 2x leveraged HSI ETF, at 30-minute interval.
 data:
-  path: data/raw/7299_HK_30min.csv
+  path: data/raw/webull_7299_hk_m30.csv
   symbol: 7299.HK
 market:
   decision_times: ["10:00", "10:30", "11:00", "11:30", "13:30", "14:00", "14:30", "15:00", "15:30"]

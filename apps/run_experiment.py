@@ -1,3 +1,8 @@
+'''
+Train the rain the corrected 2800 30-min model: 
+python -m apps.run_experiment experiments/exp_002_2800_30min.yaml
+'''
+
 from __future__ import annotations
 
 import argparse

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from apps.bot import RuntimeState, compute_target_quantity, handle_decision
+from apps.bot import RuntimeState, compute_target_quantity, handle_decision, handle_force_close
 from quantphemes_rl.config import load_config
 
 
@@ -95,3 +95,20 @@ def test_dry_run_does_not_patch() -> None:
 
     assert entry["target_qty"] == 49_500
     assert client.patches == []
+
+
+def test_force_close_patches_zero_when_live() -> None:
+    client = MockClient(cash=0.0, qty=49_500)
+
+    entry = handle_force_close(
+        client=client,
+        strategy_id="strategy",
+        cfg=load_config("experiments/production_2800.yaml"),
+        price=26.52,
+        dry_run=False,
+    )
+
+    assert entry["status"] == "force_close"
+    assert entry["target_qty"] == 0
+    assert len(client.patches) == 1
+    assert client.patches[0]["holdings"]["holdings"][0]["stocks"][0]["quantity"] == 0

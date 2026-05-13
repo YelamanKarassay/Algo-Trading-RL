@@ -94,8 +94,15 @@ def run_bot(
         )
         _write_log(log_dir, now.date(), entry)
         save_runtime_state(runtime_path, runtime)
-    _write_log(log_dir, now.date(), {"timestamp": _iso_now(), "status": "closing"})
     close = _price_for(cfg.market.force_close_time, cfg, client, day)
+    close_entry = handle_force_close(
+        client,
+        strategy_id,
+        cfg,
+        close or today_open,
+        dry_run,
+    )
+    _write_log(log_dir, now.date(), close_entry)
     if close is not None:
         runtime.yesterday_close = close
         save_runtime_state(runtime_path, runtime)
@@ -158,6 +165,29 @@ def handle_decision(
         "dry_run": dry_run,
         "status": "dry_run" if dry_run and status != "heartbeat" else status,
     }
+def handle_force_close(
+    client: Any,
+    strategy_id: str,
+    cfg: Any,
+    price: float,
+    dry_run: bool,
+) -> dict[str, Any]:
+    cash, current_qty = (
+        (float(cfg.market.capital), 0)
+        if client is None
+        else get_position_state(client, strategy_id)
+    )
+    del cash
+    if not dry_run and client is not None:
+        patch_target(client, strategy_id, _api_symbol(cfg.data.symbol), 0)
+    return {
+        "timestamp": _iso_now(),
+        "status": "force_close",
+        "price": price,
+        "target_qty": 0,
+        "current_qty": current_qty,
+        "dry_run": dry_run,
+    }
 def load_runtime_state(path: Path) -> RuntimeState:
     return RuntimeState(**json.loads(path.read_text("utf-8"))) if path.exists() else RuntimeState()
 def save_runtime_state(path: Path, state: RuntimeState) -> None:
@@ -200,7 +230,7 @@ def _parse_now(value: str | None) -> datetime | None:
 def _iso_now() -> str:
     return datetime.now(UTC).isoformat()
 def _api_symbol(symbol: str) -> str:
-    return symbol.removesuffix(".HK")
+    return symbol
 def _load_env_file(path: Path) -> None:
     if not path.exists():
         return
