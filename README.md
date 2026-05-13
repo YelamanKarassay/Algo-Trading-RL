@@ -1,6 +1,6 @@
 # Quantphemes RL
 
-We are building a Q-learning day-trading bot for the Hong Kong ETF `2800.HK`, deployed via the Quantphemes broker API. The same codebase supports a lab workflow for backtesting alternative hypotheses across assets, intervals, state encodings, and agents; production trades `2800.HK`, while the lab can test anything.
+Q-learning research and live-trading workflow for Hong Kong ETFs through the Quantphemes broker API. Production targets `2800.HK`; the lab workflow can test other assets, intervals, state encoders, rewards, and agents through YAML configs.
 
 ## Quickstart
 
@@ -9,4 +9,31 @@ pip install -e ".[dev]"
 pytest -q
 ```
 
-The canonical specification, architecture, and phase plan live in [`quantphemes_development_plan_v2.md`](quantphemes_development_plan_v2.md).
+## Common Commands
+
+```bash
+ruff check .
+python -m apps.run_experiment experiments/exp_002_2800_30min.yaml
+python -m apps.compare results/<run_a> results/<run_b> --csv --plot
+python -m apps.bot --config experiments/production_2800.yaml --dry-run
+```
+
+## Documentation
+
+- [Architecture](docs/ARCHITECTURE.md)
+- [Data Guide](docs/DATA_GUIDE.md)
+- [Runbook](docs/RUNBOOK.md)
+- [Project HTML Report](docs/project_report.html)
+- [Development Plan](quantphemes_development_plan_v2.md)
+
+## Repository Layout
+
+```text
+src/quantphemes_rl/   importable library
+apps/                 entry points
+experiments/          YAML configs
+tests/                pytest suite
+data/raw/             local market data, gitignored
+results/              experiment outputs, gitignored
+artifacts/            live bot runtime artifacts, gitignored
+```
