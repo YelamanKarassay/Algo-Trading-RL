@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m apps.bot --config experiments/production_7226.yaml --dry-run --simulate-now 2026-05-13T15:29:00+08:00)",
+      "Bash(python -c ' *)"
+    ]
+  }
+}

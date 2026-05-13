@@ -1,0 +1,5 @@
+inherits: _baseline.yaml
+name: exp_t1e_qtable_with_oracle
+description: Baseline Q-table run with oracle ceiling enabled.
+evaluation:
+  compute_oracle: true

@@ -1,0 +1,17 @@
+inherits: _baseline.yaml
+name: exp_004_2800_eod
+description: Tier 2 grid cell for 2800.HK at EOD cadence with one decision per day.
+data:
+  path: data/raw/2800_HK_eod.csv
+market:
+  decision_times: ["14:00"]
+  force_close_time: "16:00"
+state:
+  kwargs:
+    thresholds:
+      delta_close: [-0.045, 0.045]
+      delta_open: [-0.03, 0.03]
+      delta_prev: [-0.024, 0.024]
+agent:
+  kwargs:
+    num_decision_points: 1

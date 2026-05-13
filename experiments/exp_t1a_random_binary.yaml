@@ -1,0 +1,8 @@
+inherits: _baseline.yaml
+name: exp_t1a_random_binary
+description: Tier 1 floor benchmark using a random binary policy with the same fee model.
+agent:
+  type: random_binary
+  kwargs: {}
+training:
+  episodes_per_window: 1

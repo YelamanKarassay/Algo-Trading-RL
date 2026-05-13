@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Quantphemes RL Project Report</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 32px; color: #1f2937; line-height: 1.5; }
+    h1, h2 { color: #111827; }
+    section { margin: 28px 0; }
+    table { border-collapse: collapse; width: 100%; margin-top: 12px; }
+    th, td { border: 1px solid #d1d5db; padding: 8px; text-align: left; vertical-align: top; }
+    th { background: #f3f4f6; }
+    code, pre { background: #f9fafb; }
+    pre { padding: 12px; border: 1px solid #d1d5db; overflow-x: auto; }
+    .warn { border-left: 4px solid #b45309; padding: 8px 12px; background: #fffbeb; }
+    .ok { border-left: 4px solid #047857; padding: 8px 12px; background: #ecfdf5; }
+    svg { max-width: 100%; border: 1px solid #d1d5db; background: #fff; }
+  </style>
+</head>
+<body>
+  <h1>Quantphemes RL Trading Bot: Architecture and Readiness Report</h1>
+  <p>This report summarizes the implemented codebase, current synthetic-data performance, live API readiness, and the Bloomberg data needed before using the model for real trading decisions.</p>
+
+  <section>
+    <h2>1. Implementation Status</h2>
+    <div class="ok">All planned phases 0-8 are implemented: skeleton, data adapters, portfolio/env, plugins, experiment runner, diagnostics/reporting, experiment YAML grid, live bot, and federated Q-table merge.</div>
+    <table>
+      <tr><th>Area</th><th>Implemented Components</th></tr>
+      <tr><td>Data</td><td>CSV, Futu CSV, Bloomberg XLSX adapters; normalized OHLCV <code>Bar</code> and <code>DayData</code>.</td></tr>
+      <tr><td>Learning</td><td>Three-feature state encoder, log-return reward, Q-table agent, random/long/cash/buy-and-hold baselines.</td></tr>
+      <tr><td>Experiment Lab</td><td>YAML inheritance, walk-forward training, metrics, reports, Tier 1 and Tier 2 configs.</td></tr>
+      <tr><td>Live Bot</td><td>Loads production YAML and <code>artifacts/q_state.pkl</code>, reads API state, computes target quantity, PATCHes only when not in dry-run.</td></tr>
+      <tr><td>Federation</td><td>Visit-weighted Q-table merge and sidecar merge report.</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>2. Architecture</h2>
+    <pre>
+experiments/*.yaml -> config.py -> plugin registry
+                           |
+                           +-> data_source -> DayData
+                           +-> state_encoder -> MarketContext -> state
+                           +-> reward_function -> reward
+                           +-> agent -> action/update/save/load
+
+apps/run_experiment.py -> results/&lt;run&gt;/metrics.json, q_state.pkl, report.html
+apps/bot.py            -> artifacts/q_state.pkl + Quantphemes API -> holding PATCH
+apps/federate.py       -> q_state.pkl + partner q_state.pkl -> merged q_state.pkl
+    </pre>
+  </section>
+
+  <section>
+    <h2>3. Current Performance Snapshot</h2>
+    <div class="warn">Current numbers are from the bundled synthetic 5-day fixture. They prove the machinery works; they are not evidence of a profitable real strategy.</div>
+    <svg width="760" height="260" role="img" aria-label="Synthetic performance chart">
+      <line x1="70" y1="210" x2="720" y2="210" stroke="#6b7280"/>
+      <line x1="70" y1="40" x2="70" y2="210" stroke="#6b7280"/>
+      <text x="70" y="235">Synthetic baseline run</text>
+      <rect x="120" y="86" width="100" height="124" fill="#2563eb"/>
+      <rect x="300" y="74" width="100" height="136" fill="#059669"/>
+      <rect x="480" y="195" width="100" height="15" fill="#dc2626"/>
+      <text x="105" y="78">Final NAV 1,003,613.8</text>
+      <text x="278" y="66">Return +0.361%</text>
+      <text x="455" y="188">Fees 7,934.4</text>
+    </svg>
+    <p>The latest generated experiment report is under <code>results/baseline_2800_1h_qtable_*/report.html</code>.</p>
+  </section>
+
+  <section>
+    <h2>4. Live API Readiness</h2>
+    <table>
+      <tr><th>Check</th><th>Status</th></tr>
+      <tr><td>Swagger paths verified</td><td>Yes. Correct paths are singular: <code>/api/v1/portfolio</code>, <code>/api/v1/strategy/{id}/holding</code>, <code>/order</code>, <code>/holding/strategy-quantity</code>.</td></tr>
+      <tr><td>Portfolio/strategy/cash read</td><td>Read-only checks succeeded with the configured credentials.</td></tr>
+      <tr><td>Last price symbol</td><td>Platform stock-data endpoint responds to <code>2800</code>; <code>2800.HK</code> times out. Bot normalizes API symbol while preserving the project spec symbol.</td></tr>
+      <tr><td>Live trading safety</td><td>Do not run without <code>--dry-run</code> until <code>artifacts/q_state.pkl</code> is trained on real data.</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>5. Bloomberg Data Required</h2>
+    <p>Export one file per asset/interval into <code>data/raw/</code>. Preferred filenames match the experiment YAMLs, e.g. <code>2800_HK_1h.csv</code>, <code>7299_HK_30min.csv</code>.</p>
+    <table>
+      <tr><th>Field</th><th>Requirement</th></tr>
+      <tr><td>Date/Time</td><td>Timezone-aware or Hong Kong local timestamps. Need bars at every configured decision time and close time.</td></tr>
+      <tr><td>Open, High, Low, Close/Last_Price</td><td>OHLC price fields. Bloomberg XLSX adapter accepts sheet <code>Data</code> with <code>Date</code>, <code>Open</code>, <code>High</code>, <code>Low</code>, <code>Last_Price</code>, <code>Volume</code>.</td></tr>
+      <tr><td>Volume</td><td>Preferred; optional for the current baseline but useful for future state encoders.</td></tr>
+      <tr><td>Assets</td><td>At minimum <code>2800.HK</code>. Tier 2 needs <code>2828.HK</code>, <code>7299.HK</code>, <code>7568.HK</code> if available.</td></tr>
+      <tr><td>Intervals</td><td>1-hour, 30-minute, 5-minute, and EOD. If Bloomberg only gives 1-minute bars, we can aggregate later.</td></tr>
+      <tr><td>History length</td><td>Prefer 3-5 years. Minimum useful lab run: 1 year of complete trading days.</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>6. Recommended Next Step</h2>
+    <p>Keep today to dry-run/read-only validation. Tomorrow, after Bloomberg data is loaded and a real Q-table is trained, copy the chosen <code>q_state.pkl</code> to <code>artifacts/q_state.pkl</code>, dry-run once, then decide whether to remove <code>--dry-run</code>.</p>
+  </section>
+</body>
+</html>

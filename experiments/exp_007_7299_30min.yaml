@@ -1,0 +1,18 @@
+inherits: _baseline.yaml
+name: exp_007_7299_30min
+description: Tier 2 grid cell for 7299.HK, a 2x leveraged HSI ETF, at 30-minute interval.
+data:
+  path: data/raw/7299_HK_30min.csv
+  symbol: 7299.HK
+market:
+  decision_times: ["10:00", "10:30", "11:00", "11:30", "13:30", "14:00", "14:30", "15:00", "15:30"]
+  force_close_time: "16:00"
+state:
+  kwargs:
+    thresholds:
+      delta_close: [-0.0192857143, 0.0192857143]
+      delta_open: [-0.0128571429, 0.0128571429]
+      delta_prev: [-0.0102857143, 0.0102857143]
+agent:
+  kwargs:
+    num_decision_points: 9

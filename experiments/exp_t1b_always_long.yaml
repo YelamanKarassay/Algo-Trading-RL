@@ -1,0 +1,8 @@
+inherits: _baseline.yaml
+name: exp_t1b_always_long
+description: Tier 1 benchmark that enters long each day and flattens at close.
+agent:
+  type: always_long
+  kwargs: {}
+training:
+  episodes_per_window: 1

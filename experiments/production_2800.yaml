@@ -1,0 +1,8 @@
+inherits: _baseline.yaml
+name: production_2800
+description: Production 2800.HK live-bot configuration using the baseline specification.
+data:
+  symbol: 2800.HK
+artifacts:
+  q_state_path: artifacts/q_state.pkl
+  log_dir: artifacts/logs/

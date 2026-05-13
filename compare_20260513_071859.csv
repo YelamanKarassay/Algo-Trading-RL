@@ -1,0 +1,2 @@
+name,asset,interval,agent,final_nav,return_pct,sharpe,alpha_vs_bh,num_trades,fees,fees_pct_of_pnl
+exp_010_7226_1h,7226,1h,qtable,1000000.0,0.0,0.0528022462901867,-0.010109146000000235,10,19999.98,0.0

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ config.name }} report</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 32px; color: #1f2937; }
+    h1, h2 { color: #111827; }
+    section { margin: 28px 0; }
+    table { border-collapse: collapse; width: 100%; margin-top: 12px; }
+    th, td { border: 1px solid #d1d5db; padding: 8px; text-align: right; }
+    th:first-child, td:first-child { text-align: left; }
+    th { background: #f3f4f6; }
+    img { max-width: 100%; border: 1px solid #d1d5db; }
+    pre { white-space: pre-wrap; background: #f9fafb; padding: 12px; border: 1px solid #d1d5db; }
+  </style>
+</head>
+<body>
+  <section>
+    <h1>{{ config.name }}</h1>
+    <p>{{ config.description }}</p>
+    <details>
+      <summary>Config Snapshot</summary>
+      <pre>{{ config_yaml }}</pre>
+    </details>
+  </section>
+
+  <section>
+    <h2>1. Summary Table</h2>
+    <table>
+      <thead>
+        <tr><th>Agent</th><th>Final NAV</th><th>Return</th><th>Sharpe</th><th>Trades</th><th>Fees</th><th>Alpha vs B&H</th></tr>
+      </thead>
+      <tbody>
+      {% for row in summary_rows %}
+        <tr>
+          <td>{{ row.agent }}</td>
+          <td>{{ "%.4f"|format(row.final_nav) }}</td>
+          <td>{{ "%.6f"|format(row.return) }}</td>
+          <td>{{ "%.4f"|format(row.sharpe) }}</td>
+          <td>{{ row.num_trades }}</td>
+          <td>{{ row.total_fees }}</td>
+          <td>{{ row.alpha_vs_bh }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>2. NAV Curves</h2>
+    <img alt="NAV curves" src="data:image/png;base64,{{ nav_curve_png }}">
+  </section>
+
+  <section>
+    <h2>3. Action Distribution by Decision Point</h2>
+    <img alt="Action distribution" src="data:image/png;base64,{{ action_dist_png }}">
+  </section>
+
+  <section>
+    <h2>4. State Coverage Heatmap</h2>
+    <p>Visited cells: {{ "%.2f"|format(coverage_summary.pct_visited * 100) }}%;
+       well-visited cells: {{ "%.2f"|format(coverage_summary.pct_well_visited * 100) }}%.</p>
+    <img alt="State coverage heatmap" src="data:image/png;base64,{{ coverage_png }}">
+  </section>
+
+  <section>
+    <h2>5. Per-Feature Bin-Conditional Returns + MI</h2>
+    <table>
+      <thead><tr><th>Feature</th><th>Bin</th><th>Mean Return</th><th>Std Return</th><th>MI</th></tr></thead>
+      <tbody>
+      {% for row in signal_rows %}
+        <tr>
+          <td>{{ row.feature }}</td>
+          <td>{{ row.bin }}</td>
+          <td>{{ "%.8f"|format(row.mean_return) }}</td>
+          <td>{{ "%.8f"|format(row.std_return) }}</td>
+          <td>{{ "%.8f"|format(row.mi) }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>6. Fees as Fraction of |Gross PnL|</h2>
+    <p>{{ "%.6f"|format(fee_fraction) }}</p>
+  </section>
+
+  <section>
+    <h2>7. Reward Histogram</h2>
+    <img alt="Reward histogram" src="data:image/png;base64,{{ reward_hist_png }}">
+  </section>
+
+  <section>
+    <h2>8. Oracle</h2>
+    {% if oracle %}
+      <p>Oracle final NAV: {{ "%.4f"|format(oracle.final_nav) }};
+         return: {{ "%.6f"|format(oracle.return) }}.</p>
+    {% else %}
+      <p>Oracle disabled for this run.</p>
+    {% endif %}
+  </section>
+</body>
+</html>

@@ -1,0 +1,8 @@
+inherits: _baseline.yaml
+name: exp_t1d_buy_and_hold
+description: Tier 1 buy-and-hold benchmark.
+agent:
+  type: buy_and_hold
+  kwargs: {}
+training:
+  episodes_per_window: 1

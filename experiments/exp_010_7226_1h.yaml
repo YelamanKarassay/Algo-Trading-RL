@@ -1,0 +1,33 @@
+inherits: _baseline.yaml
+name: exp_010_7226_1h
+description: Lab experiment for 7226, a 2x leveraged Hang Seng Tech ETF, using 1-minute Futu data sampled at the 1-hour decision points.
+data:
+  source: futu
+  path: data/raw/HK_07226_1m.csv
+  symbol: "7226"
+  start: 2020-12-10
+  end: 2026-05-11
+market:
+  decision_times: ["10:30", "11:30", "13:30", "14:30", "15:30"]
+  force_close_time: "16:00"
+state:
+  kwargs:
+    thresholds:
+      delta_close: [-0.027, 0.027]
+      delta_open: [-0.018, 0.018]
+      delta_prev: [-0.0144, 0.0144]
+agent:
+  kwargs:
+    num_decision_points: 5
+training:
+  walk_forward:
+    initial_train_days: 1000
+    test_window_days: 250
+  episodes_per_window: 5
+evaluation:
+  baselines:
+    - random_binary
+    - always_long
+    - buy_and_hold
+  compute_oracle: true
+  feature_signal_check: true

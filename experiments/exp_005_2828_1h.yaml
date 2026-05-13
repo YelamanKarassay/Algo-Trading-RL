@@ -1,0 +1,6 @@
+inherits: _baseline.yaml
+name: exp_005_2828_1h
+description: Tier 2 grid cell for 2828.HK at the baseline 1-hour interval.
+data:
+  path: data/raw/2828_HK_1h.csv
+  symbol: 2828.HK

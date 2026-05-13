@@ -1,0 +1,12 @@
+inherits: _baseline.yaml
+name: exp_008_7568_1h
+description: Tier 2 grid cell for 7568.HK, a 3x leveraged FTSE A50 ETF, at 1-hour interval.
+data:
+  path: data/raw/7568_HK_1h.csv
+  symbol: 7568.HK
+state:
+  kwargs:
+    thresholds:
+      delta_close: [-0.039, 0.039]
+      delta_open: [-0.026, 0.026]
+      delta_prev: [-0.0208, 0.0208]

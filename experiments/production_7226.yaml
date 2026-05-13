@@ -1,0 +1,24 @@
+inherits: _baseline.yaml
+name: production_7226
+description: Live deployment of the trained exp_010 Q-table on 7226 (2x leveraged Hang Seng Tech ETF).
+data:
+  source: futu
+  path: data/raw/HK_07226_1m.csv
+  symbol: "7226"
+  start: 2020-12-10
+  end: 2026-05-11
+market:
+  decision_times: ["10:30", "11:30", "13:30", "14:30", "15:30"]
+  force_close_time: "16:00"
+state:
+  kwargs:
+    thresholds:
+      delta_close: [-0.027, 0.027]
+      delta_open: [-0.018, 0.018]
+      delta_prev: [-0.0144, 0.0144]
+agent:
+  kwargs:
+    num_decision_points: 5
+artifacts:
+  q_state_path: artifacts/q_state_7226.pkl
+  log_dir: artifacts/logs/

@@ -1,0 +1,12 @@
+inherits: _baseline.yaml
+name: exp_006_7299_1h
+description: Tier 2 grid cell for 7299.HK, a 2x leveraged HSI ETF, at 1-hour interval.
+data:
+  path: data/raw/7299_HK_1h.csv
+  symbol: 7299.HK
+state:
+  kwargs:
+    thresholds:
+      delta_close: [-0.027, 0.027]
+      delta_open: [-0.018, 0.018]
+      delta_prev: [-0.0144, 0.0144]

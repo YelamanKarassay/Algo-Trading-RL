@@ -1,0 +1,8 @@
+inherits: _baseline.yaml
+name: exp_t1c_always_cash
+description: Tier 1 benchmark that stays in cash all day.
+agent:
+  type: always_cash
+  kwargs: {}
+training:
+  episodes_per_window: 1
