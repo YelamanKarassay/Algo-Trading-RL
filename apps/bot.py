@@ -60,26 +60,35 @@ def run_bot(
     q_state_path = Path(cfg.artifacts.q_state_path)
     if q_state_path.exists():
         agent.load(q_state_path)
-    client = None if dry_run else UndocumentedQuantphemesClient(api_key) if api_key else None
+    client = UndocumentedQuantphemesClient(api_key) if api_key else None
     log_dir = Path(cfg.artifacts.log_dir)
     runtime_path = Path("artifacts/runtime_state.json")
     runtime = load_runtime_state(runtime_path)
     now = simulate_now or datetime.now(HK_TZ)
     if simulate_now is None:
-        _sleep_until(_next_time(now, "09:25"))
-    day = _local_day(cfg, now.date()) if dry_run or client is None else None
+        _wait_for_open_window(now)
+    trading_date = now.date().isoformat()
+    if runtime.today_date != trading_date:
+        runtime = RuntimeState(
+            today_date=trading_date,
+            yesterday_close=_latest_historical_close(cfg, now.date()),
+        )
+    day = _local_day(cfg, now.date()) if client is None else None
     today_open = _price_for("09:30", cfg, client, day)
     if today_open is None:
         _write_log(log_dir, now.date(), {"timestamp": _iso_now(), "status": "skip_no_open"})
         return
-    runtime.today_date = now.date().isoformat()
+    runtime.today_date = trading_date
     runtime.today_open = today_open
     runtime.yesterday_close = runtime.yesterday_close or today_open
     save_runtime_state(runtime_path, runtime)
     for index, decision_time in enumerate(cfg.market.decision_times):
         if simulate_now is None:
-            _sleep_until(_next_time(datetime.now(HK_TZ), decision_time) - timedelta(minutes=1))
-            _sleep_until(_next_time(datetime.now(HK_TZ), decision_time))
+            target_time = _same_day_time(datetime.now(HK_TZ), decision_time)
+            if target_time < datetime.now(HK_TZ):
+                continue
+            _sleep_until(target_time - timedelta(minutes=1))
+            _sleep_until(target_time)
         entry = handle_decision(
             client,
             strategy_id,
@@ -94,6 +103,10 @@ def run_bot(
         )
         _write_log(log_dir, now.date(), entry)
         save_runtime_state(runtime_path, runtime)
+    if simulate_now is None:
+        force_close_at = _same_day_time(datetime.now(HK_TZ), cfg.market.force_close_time)
+        if force_close_at >= datetime.now(HK_TZ):
+            _sleep_until(force_close_at)
     close = _price_for(cfg.market.force_close_time, cfg, client, day)
     close_entry = handle_force_close(
         client,
@@ -199,6 +212,13 @@ def _local_day(cfg: Any, target_date: date) -> DayData:
         source.load(cfg.data.symbol, cfg.data.start, cfg.data.end, "1h"), cfg.data.symbol
     )
     return next((day for day in days if day.date == target_date), days[0])
+def _latest_historical_close(cfg: Any, before_date: date) -> float | None:
+    source = build("data_source", cfg.data.source, path=cfg.data.path)
+    days = group_by_day(
+        source.load(cfg.data.symbol, cfg.data.start, cfg.data.end, "1h"), cfg.data.symbol
+    )
+    prior_days = [day for day in days if day.date < before_date]
+    return prior_days[-1].close_price if prior_days else None
 def _price_for(
     time_str: str,
     cfg: Any,
@@ -209,10 +229,11 @@ def _price_for(
         return day.prices_at_decision_times([time_str])[time_str]
     if client is None:
         return None
-    payload = client.get_last_price(_api_symbol(cfg.data.symbol))
+    payload = client.get_last_price(_price_symbol(cfg.data.symbol))
     if isinstance(payload, list):
         payload = payload[0]
-    return float(payload.get("price") or payload.get("last_price"))
+    price = payload.get("price") or payload.get("last_price")
+    return None if price in (None, 0, "0") else float(price)
 def _write_log(log_dir: Path, trading_date: date, entry: dict[str, Any]) -> None:
     log_dir.mkdir(parents=True, exist_ok=True)
     text = json.dumps(entry, sort_keys=True)
@@ -223,14 +244,32 @@ def _next_time(now: datetime, hhmm: str) -> datetime:
     hour, minute = [int(part) for part in hhmm.split(":")]
     target = now.astimezone(HK_TZ).replace(hour=hour, minute=minute, second=0, microsecond=0)
     return target if target >= now else target + timedelta(days=1)
+def _same_day_time(now: datetime, hhmm: str) -> datetime:
+    hour, minute = [int(part) for part in hhmm.split(":")]
+    return now.astimezone(HK_TZ).replace(hour=hour, minute=minute, second=0, microsecond=0)
 def _sleep_until(target: datetime) -> None:
     time.sleep(max(0.0, (target - datetime.now(HK_TZ)).total_seconds()))
+def _wait_for_open_window(now: datetime) -> None:
+    local_now = now.astimezone(HK_TZ)
+    open_buffer = local_now.replace(hour=9, minute=25, second=0, microsecond=0)
+    open_time = local_now.replace(hour=9, minute=30, second=0, microsecond=0)
+    close_time = local_now.replace(hour=16, minute=5, second=0, microsecond=0)
+    if local_now < open_buffer:
+        _sleep_until(open_buffer)
+        _sleep_until(open_time)
+    elif local_now < open_time:
+        _sleep_until(open_time)
+    elif local_now > close_time:
+        _sleep_until(_next_time(local_now, "09:25"))
+        _sleep_until(_next_time(datetime.now(HK_TZ), "09:30"))
 def _parse_now(value: str | None) -> datetime | None:
     return None if value is None else datetime.fromisoformat(value).astimezone(HK_TZ)
 def _iso_now() -> str:
     return datetime.now(UTC).isoformat()
 def _api_symbol(symbol: str) -> str:
     return symbol
+def _price_symbol(symbol: str) -> str:
+    return symbol.removesuffix(".HK")
 def _load_env_file(path: Path) -> None:
     if not path.exists():
         return

@@ -1,6 +1,6 @@
-inherits: _baseline.yaml
+inherits: exp_002_2800_30min.yaml
 name: production_2800
-description: Production 2800.HK live-bot configuration using the baseline specification.
+description: Production 2800.HK live-bot configuration using the 30-minute Webull-trained specification.
 data:
   symbol: 2800.HK
 artifacts:

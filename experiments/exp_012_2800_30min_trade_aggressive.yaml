@@ -1,0 +1,23 @@
+inherits: exp_002_2800_30min.yaml
+name: exp_012_2800_30min_trade_aggressive
+description: Aggressive trade-seeking 2800.HK M30 Q-table with stronger long-biased reward.
+reward:
+  function: log_return_long_bias
+  kwargs:
+    beta: 0.00015
+agent:
+  kwargs:
+    num_decision_points: 9
+    num_states: 27
+    num_actions: 2
+    epsilon_start: 0.8
+    epsilon_decay_per_episode: 0.985
+    epsilon_min: 0.10
+    alpha_mode: per_cell
+    optimistic_init: 0.005
+    tie_break: long
+training:
+  walk_forward:
+    initial_train_days: 1000
+    test_window_days: 250
+  episodes_per_window: 25

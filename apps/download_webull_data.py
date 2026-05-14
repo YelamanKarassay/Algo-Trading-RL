@@ -86,7 +86,7 @@ def download_bars(
         payload = response.json()
         if not payload:
             break
-        frame = _normalize_bars(payload, spec.canonical_symbol)
+        frame = _normalize_bars(payload, spec.canonical_symbol, spec.timespan)
         frames.append(frame)
         oldest = pd.to_datetime(frame["timestamp"]).min().tz_localize(HK_TZ)
         newest = pd.to_datetime(frame["timestamp"]).max().tz_localize(HK_TZ)
@@ -106,10 +106,16 @@ def download_bars(
     return out.reset_index(drop=True)
 
 
-def _normalize_bars(payload: list[dict[str, Any]], canonical_symbol: str) -> pd.DataFrame:
+def _normalize_bars(
+    payload: list[dict[str, Any]], canonical_symbol: str, timespan: str
+) -> pd.DataFrame:
     frame = pd.DataFrame(payload).rename(columns={"time": "timestamp"})
     frame["timestamp"] = pd.to_datetime(frame["timestamp"], utc=True, errors="coerce")
-    frame["timestamp"] = frame["timestamp"].dt.tz_convert(HK_TZ).dt.strftime("%Y-%m-%d %H:%M:%S")
+    frame["timestamp"] = frame["timestamp"].dt.tz_convert(HK_TZ)
+    shift = _timespan_delta(timespan)
+    if shift is not None:
+        frame["timestamp"] = frame["timestamp"] + shift
+    frame["timestamp"] = frame["timestamp"].dt.strftime("%Y-%m-%d %H:%M:%S")
     frame["symbol"] = canonical_symbol
     for column in ["open", "high", "low", "close", "volume"]:
         frame[column] = pd.to_numeric(frame[column], errors="coerce")
@@ -171,6 +177,15 @@ def _to_webull_hk_symbol(symbol: str) -> str:
     if root.isdigit():
         return root.zfill(5)
     return symbol
+
+
+def _timespan_delta(timespan: str) -> pd.Timedelta | None:
+    upper = timespan.upper()
+    if upper.startswith("M") and upper[1:].isdigit():
+        return pd.Timedelta(minutes=int(upper[1:]))
+    if upper.startswith("S") and upper[1:].isdigit():
+        return pd.Timedelta(seconds=int(upper[1:]))
+    return None
 
 
 def _millis(value: datetime) -> int:

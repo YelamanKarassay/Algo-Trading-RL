@@ -46,6 +46,19 @@ def test_epsilon_zero_always_argmax() -> None:
     assert {agent.act(0, training=True) for _ in range(100)} == {1}
 
 
+def test_long_margin_prefers_long_when_cash_edge_is_small() -> None:
+    agent = QTableAgent(
+        num_decision_points=1,
+        num_states=1,
+        epsilon_start=0.0,
+        long_margin=0.002,
+    )
+    agent.tables[0, 0, 0] = 0.001
+    agent.tables[0, 0, 1] = 0.0
+
+    assert agent.act(0, training=False) == 1
+
+
 def test_epsilon_one_always_uniform() -> None:
     random.seed(19)
     agent = QTableAgent(num_decision_points=1, num_states=1, epsilon_start=1.0)
@@ -59,7 +72,7 @@ def test_epsilon_one_always_uniform() -> None:
 
 def test_save_load_round_trips_tables_and_visits(tmp_path) -> None:
     path = tmp_path / "qtable.pkl"
-    agent = QTableAgent(num_decision_points=2, num_states=3, epsilon_start=0.2)
+    agent = QTableAgent(num_decision_points=2, num_states=3, epsilon_start=0.2, long_margin=0.002)
     agent.update(Transition(t=0, state=1, action=1, reward=2.0, next_state=2, done=True))
     agent.tables[1, 2, 0] = 4.0
     agent.decay_epsilon()
@@ -72,3 +85,4 @@ def test_save_load_round_trips_tables_and_visits(tmp_path) -> None:
     np.testing.assert_array_equal(loaded.visits, agent.visits)
     assert loaded.day_counter == agent.day_counter
     assert loaded.epsilon == pytest.approx(agent.epsilon)
+    assert loaded.long_margin == pytest.approx(agent.long_margin)

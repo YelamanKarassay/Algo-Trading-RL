@@ -28,6 +28,7 @@ class QTableAgent(Agent):
         alpha_mode: Literal["per_cell", "one_over_d"] = "per_cell",
         optimistic_init: float = 0.0,
         tie_break: Literal["random", "long", "cash"] = "random",
+        long_margin: float = 0.0,
     ) -> None:
         if tie_break not in {"random", "long", "cash"}:
             msg = f"Unsupported tie_break '{tie_break}'."
@@ -43,6 +44,7 @@ class QTableAgent(Agent):
         self.alpha_mode = alpha_mode
         self.optimistic_init = optimistic_init
         self.tie_break = tie_break
+        self.long_margin = long_margin
         self.tables = np.full(
             (num_decision_points, num_states, num_actions),
             optimistic_init,
@@ -109,6 +111,7 @@ class QTableAgent(Agent):
         self.alpha_mode = config["alpha_mode"]
         self.optimistic_init = config["optimistic_init"]
         self.tie_break = config["tie_break"]
+        self.long_margin = config.get("long_margin", 0.0)
 
     def decay_epsilon(self) -> None:
         """Apply one episode of epsilon decay."""
@@ -127,6 +130,12 @@ class QTableAgent(Agent):
 
     def _argmax_action(self, t: int, state: int) -> int:
         q_values = self.tables[t, state]
+        if (
+            self.num_actions == 2
+            and self.long_margin > 0.0
+            and q_values[1] + self.long_margin >= q_values[0]
+        ):
+            return 1
         max_value = np.max(q_values)
         candidates = [action for action, value in enumerate(q_values) if value == max_value]
         if len(candidates) == 1:
@@ -153,4 +162,5 @@ class QTableAgent(Agent):
             "alpha_mode": self.alpha_mode,
             "optimistic_init": self.optimistic_init,
             "tie_break": self.tie_break,
+            "long_margin": self.long_margin,
         }
