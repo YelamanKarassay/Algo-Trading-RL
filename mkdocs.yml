@@ -1,0 +1,67 @@
+site_name: Quantphemes RL Knowledge Base
+site_description: Q-learning research and live-trading workflow for Hong Kong ETFs.
+site_url: https://yelamankarassay.github.io/Algo-Trading-RL/
+repo_url: https://github.com/YelamanKarassay/Algo-Trading-RL
+repo_name: YelamanKarassay/Algo-Trading-RL
+
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.footer
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+    - content.tabs.link
+  palette:
+    - scheme: default
+      primary: blue grey
+      accent: teal
+  font:
+    text: Inter
+    code: JetBrains Mono
+
+plugins:
+  - search
+  - mermaid2
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - md_in_html
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:mermaid2.fence_mermaid_custom
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+extra_css:
+  - assets/stylesheets/extra.css
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Overview: getting-started/index.md
+  - Architecture:
+      - System Design: architecture/index.md
+  - Experiment Workflow:
+      - Running Experiments: experiments/index.md
+  - Data Guide:
+      - Market Data: data/index.md
+  - Live Trading Runbook:
+      - Operations: operations/runbook.md
+  - API Integration:
+      - Quantphemes API: api/quantphemes.md
+  - Research Notes:
+      - Model Notes: research/index.md
+  - Developer Guide:
+      - Extending The Project: developer/index.md

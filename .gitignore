@@ -11,3 +11,4 @@ notebooks/conf/
 .DS_Store
 .env
 *.egg-info/
+site/

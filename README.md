@@ -9,6 +9,22 @@ pip install -e ".[dev]"
 pytest -q
 ```
 
+## Documentation
+
+The full project knowledge base lives in `docs/` and is built with MkDocs Material.
+
+```bash
+pip install -r requirements-docs.txt
+mkdocs serve
+```
+
+Start here:
+
+- [Home](docs/index.md)
+- [Getting Started](docs/getting-started/index.md)
+- [Architecture](docs/architecture/index.md)
+- [Live Trading Runbook](docs/operations/runbook.md)
+
 ## Common Commands
 
 ```bash
@@ -17,14 +33,6 @@ python -m apps.run_experiment experiments/exp_002_2800_30min.yaml
 python -m apps.compare results/<run_a> results/<run_b> --csv --plot
 python -m apps.bot --config experiments/production_2800.yaml --dry-run
 ```
-
-## Documentation
-
-- [Architecture](docs/ARCHITECTURE.md)
-- [Data Guide](docs/DATA_GUIDE.md)
-- [Runbook](docs/RUNBOOK.md)
-- [Project HTML Report](docs/project_report.html)
-- [Development Plan](quantphemes_development_plan_v2.md)
 
 ## Repository Layout
 
