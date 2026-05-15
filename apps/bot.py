@@ -67,6 +67,7 @@ def run_bot(
     now = simulate_now or datetime.now(HK_TZ)
     if simulate_now is None:
         _wait_for_open_window(now)
+        now = datetime.now(HK_TZ)
     trading_date = now.date().isoformat()
     if runtime.today_date != trading_date:
         runtime = RuntimeState(
@@ -74,9 +75,17 @@ def run_bot(
             yesterday_close=_latest_historical_close(cfg, now.date()),
         )
     day = _local_day(cfg, now.date()) if client is None else None
-    today_open = _price_for("09:30", cfg, client, day)
+    today_open, open_error = _safe_price_for("09:30", cfg, client, day)
     if today_open is None:
-        _write_log(log_dir, now.date(), {"timestamp": _iso_now(), "status": "skip_no_open"})
+        _write_log(
+            log_dir,
+            now.date(),
+            {
+                "timestamp": _iso_now(),
+                "status": "skip_no_open",
+                "error": open_error,
+            },
+        )
         return
     runtime.today_date = trading_date
     runtime.today_open = today_open
@@ -89,32 +98,51 @@ def run_bot(
                 continue
             _sleep_until(target_time - timedelta(minutes=1))
             _sleep_until(target_time)
-        entry = handle_decision(
-            client,
-            strategy_id,
-            cfg,
-            agent,
-            encoder,
-            runtime,
-            decision_time,
-            index,
-            _price_for(decision_time, cfg, client, day) or today_open,
-            dry_run,
-        )
+        price, price_error = _safe_price_for(decision_time, cfg, client, day)
+        if price is None:
+            entry = _error_entry(
+                "price_error",
+                price_error or "price unavailable",
+                decision_time=decision_time,
+            )
+            _write_log(log_dir, now.date(), entry)
+            save_runtime_state(runtime_path, runtime)
+            continue
+        try:
+            entry = handle_decision(
+                client,
+                strategy_id,
+                cfg,
+                agent,
+                encoder,
+                runtime,
+                decision_time,
+                index,
+                price,
+                dry_run,
+            )
+        except Exception as exc:
+            entry = _error_entry("decision_error", _format_error(exc), decision_time=decision_time)
         _write_log(log_dir, now.date(), entry)
         save_runtime_state(runtime_path, runtime)
     if simulate_now is None:
         force_close_at = _same_day_time(datetime.now(HK_TZ), cfg.market.force_close_time)
         if force_close_at >= datetime.now(HK_TZ):
             _sleep_until(force_close_at)
-    close = _price_for(cfg.market.force_close_time, cfg, client, day)
-    close_entry = handle_force_close(
-        client,
-        strategy_id,
-        cfg,
-        close or today_open,
-        dry_run,
-    )
+    close, close_error = _safe_price_for(cfg.market.force_close_time, cfg, client, day)
+    if close is None:
+        close_entry = _error_entry("force_close_price_error", close_error or "price unavailable")
+    else:
+        try:
+            close_entry = handle_force_close(
+                client,
+                strategy_id,
+                cfg,
+                close,
+                dry_run,
+            )
+        except Exception as exc:
+            close_entry = _error_entry("force_close_error", _format_error(exc))
     _write_log(log_dir, now.date(), close_entry)
     if close is not None:
         runtime.yesterday_close = close
@@ -234,6 +262,31 @@ def _price_for(
         payload = payload[0]
     price = payload.get("price") or payload.get("last_price")
     return None if price in (None, 0, "0") else float(price)
+def _safe_price_for(
+    time_str: str,
+    cfg: Any,
+    client: UndocumentedQuantphemesClient | None,
+    day: DayData | None,
+) -> tuple[float | None, str | None]:
+    try:
+        return _price_for(time_str, cfg, client, day), None
+    except Exception as exc:
+        return None, _format_error(exc)
+def _error_entry(
+    status: str,
+    error: str,
+    decision_time: str | None = None,
+) -> dict[str, Any]:
+    entry: dict[str, Any] = {
+        "timestamp": _iso_now(),
+        "status": status,
+        "error": error,
+    }
+    if decision_time is not None:
+        entry["decision_time"] = decision_time
+    return entry
+def _format_error(exc: Exception) -> str:
+    return f"{type(exc).__name__}: {exc}"
 def _write_log(log_dir: Path, trading_date: date, entry: dict[str, Any]) -> None:
     log_dir.mkdir(parents=True, exist_ok=True)
     text = json.dumps(entry, sort_keys=True)

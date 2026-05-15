@@ -2,7 +2,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from apps.bot import RuntimeState, compute_target_quantity, handle_decision, handle_force_close
+from apps.bot import (
+    RuntimeState,
+    _safe_price_for,
+    compute_target_quantity,
+    handle_decision,
+    handle_force_close,
+)
 from quantphemes_rl.config import load_config
 
 
@@ -38,6 +44,12 @@ class MockClient:
     def update_holding(self, strategy_id: str, holdings: dict[str, Any]) -> dict[str, Any]:
         self.patches.append({"strategy_id": strategy_id, "holdings": holdings})
         return {"ok": True}
+
+
+class TimeoutPriceClient:
+    def get_last_price(self, symbol: str) -> dict[str, Any]:
+        del symbol
+        raise TimeoutError("api read timed out")
 
 
 def test_compute_target_quantity_long() -> None:
@@ -112,3 +124,15 @@ def test_force_close_patches_zero_when_live() -> None:
     assert entry["target_qty"] == 0
     assert len(client.patches) == 1
     assert client.patches[0]["holdings"]["holdings"][0]["stocks"][0]["quantity"] == 0
+
+
+def test_safe_price_for_converts_api_timeout_to_error() -> None:
+    price, error = _safe_price_for(
+        "10:00",
+        load_config("experiments/production_2800.yaml"),
+        TimeoutPriceClient(),
+        None,
+    )
+
+    assert price is None
+    assert error == "TimeoutError: api read timed out"
