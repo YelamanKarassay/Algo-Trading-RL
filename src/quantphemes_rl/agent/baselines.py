@@ -38,10 +38,13 @@ class RandomBinary(_NoOpAgent):
 class AlwaysLong(_NoOpAgent):
     """Always fully invested baseline."""
 
+    def __init__(self, action: int = 1) -> None:
+        self.action = action
+
     def act(self, state: int, training: bool) -> int:
         """Return long action."""
         del state, training
-        return 1
+        return self.action
 
 
 @register("agent", "always_cash")
@@ -58,7 +61,8 @@ class AlwaysCash(_NoOpAgent):
 class BuyAndHold(_NoOpAgent):
     """Buy at the first decision and maintain previous action afterwards."""
 
-    def __init__(self) -> None:
+    def __init__(self, action: int = 1) -> None:
+        self.action = action
         self.has_acted_today = False
         self.previous_action = 0
 
@@ -66,7 +70,7 @@ class BuyAndHold(_NoOpAgent):
         """Return long on first decision, then keep the previous action."""
         del state, training
         if not self.has_acted_today:
-            self.previous_action = 1
+            self.previous_action = self.action
             self.has_acted_today = True
         return self.previous_action
 

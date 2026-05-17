@@ -40,6 +40,19 @@ class RecordingReward(RewardFunction):
         return math.log(v_t_plus_1 / v_t)
 
 
+class CapturingEncoder(StateEncoder):
+    def __init__(self) -> None:
+        self.contexts: list[MarketContext] = []
+
+    @property
+    def num_states(self) -> int:
+        return len(DECISION_TIMES)
+
+    def encode(self, ctx: MarketContext) -> int:
+        self.contexts.append(ctx)
+        return ctx.decision_index
+
+
 def test_all_cash_day() -> None:
     env = _make_env(Portfolio(cash=1_000.0, shares=0, position=0, total_fees=0.0))
 
@@ -136,6 +149,23 @@ def test_v_t_measured_before_trade() -> None:
     assert info["v_t_plus_1"] == 1_020.0
 
 
+def test_context_uses_previous_close_when_available() -> None:
+    encoder = CapturingEncoder()
+    day = _make_uptrend_day(previous_close=99.5)
+    env = TradingEnv(
+        day=day,
+        encoder=encoder,
+        reward_fn=LogReturnReward(),
+        portfolio=Portfolio(cash=1_000.0, shares=0, position=0, total_fees=0.0),
+        decision_times=DECISION_TIMES,
+        force_close_time=FORCE_CLOSE_TIME,
+    )
+
+    env.reset()
+
+    assert encoder.contexts[0].yesterday_close == 99.5
+
+
 def _make_env(portfolio: Portfolio, reward_fn: RewardFunction | None = None) -> TradingEnv:
     return TradingEnv(
         day=_make_uptrend_day(),
@@ -162,7 +192,7 @@ def _run_actions(env: TradingEnv, actions: list[int]) -> tuple[list[float], list
     return rewards, infos
 
 
-def _make_uptrend_day() -> DayData:
+def _make_uptrend_day(previous_close: float | None = None) -> DayData:
     prices = {
         "10:30": 100.0,
         "11:30": 102.0,
@@ -182,4 +212,9 @@ def _make_uptrend_day() -> DayData:
         )
         for time, price in prices.items()
     ]
-    return DayData(date=date(2026, 5, 4), symbol="2800.HK", bars=bars)
+    return DayData(
+        date=date(2026, 5, 4),
+        symbol="2800.HK",
+        bars=bars,
+        previous_close=previous_close,
+    )

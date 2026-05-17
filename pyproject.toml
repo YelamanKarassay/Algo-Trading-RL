@@ -18,6 +18,7 @@ dependencies = [
     "matplotlib",
     "jinja2",
     "scikit-learn",
+    "plotly",
 ]
 
 [project.optional-dependencies]

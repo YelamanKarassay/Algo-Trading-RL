@@ -21,6 +21,7 @@ Never commit `.env`.
 - Dry-run produces decision logs.
 - Quantphemes strategy/portfolio are confirmed in the platform UI.
 - The bot can read cash, position, and last price.
+- Production force-close is scheduled before the market close, currently `15:55` HKT.
 - You know how to stop the service.
 
 ## Dry-Run

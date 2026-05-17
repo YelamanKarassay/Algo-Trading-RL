@@ -1,0 +1,70 @@
+inherits: ../_baseline.yaml
+name: research_7568_15m_log_return_long_bias_three_feature_binary
+description: 'Research sweep: 7568.HK 15m, log_return_long_bias, three_feature, binary
+  actions.'
+data:
+  path: data/raw/webull_7568_hk_m15.csv
+  symbol: 7568.HK
+  start: '2018-01-01'
+  end: '2026-05-17'
+market:
+  decision_times:
+  - 09:45
+  - '10:00'
+  - '10:15'
+  - '10:30'
+  - '10:45'
+  - '11:00'
+  - '11:15'
+  - '11:30'
+  - '13:15'
+  - '13:30'
+  - '13:45'
+  - '14:00'
+  - '14:15'
+  - '14:30'
+  - '14:45'
+  - '15:00'
+  - '15:15'
+  - '15:30'
+  force_close_time: '16:00'
+state:
+  encoder: three_feature
+  kwargs:
+    thresholds:
+      delta_close:
+      - -0.0216666667
+      - 0.0216666667
+      delta_open:
+      - -0.0144444444
+      - 0.0144444444
+      delta_prev:
+      - -0.0115555556
+      - 0.0115555556
+reward:
+  function: log_return_long_bias
+  kwargs:
+    beta: 3.0e-05
+agent:
+  kwargs:
+    num_decision_points: 18
+    num_states: 27
+    num_actions: 2
+    epsilon_start: 0.5
+    epsilon_decay_per_episode: 0.98
+    epsilon_min: 0.03
+    alpha_mode: per_cell
+    optimistic_init: 0.0
+    tie_break: random
+training:
+  walk_forward:
+    initial_train_days: 500
+    test_window_days: 125
+  episodes_per_window: 5
+evaluation:
+  baselines:
+  - random_binary
+  - always_long
+  - buy_and_hold
+  compute_oracle: true
+  feature_signal_check: true

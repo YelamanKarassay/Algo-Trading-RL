@@ -1,0 +1,105 @@
+inherits: ../_baseline.yaml
+name: research_7299_5m_fee_aware_with_volatility_binary
+description: 'Research sweep: 7299.HK 5m, fee_aware, with_volatility, binary actions.'
+data:
+  path: data/raw/webull_7299_hk_m5.csv
+  symbol: 7299.HK
+  start: '2018-01-01'
+  end: '2026-05-17'
+market:
+  decision_times:
+  - 09:35
+  - 09:40
+  - 09:45
+  - 09:50
+  - 09:55
+  - '10:00'
+  - '10:05'
+  - '10:10'
+  - '10:15'
+  - '10:20'
+  - '10:25'
+  - '10:30'
+  - '10:35'
+  - '10:40'
+  - '10:45'
+  - '10:50'
+  - '10:55'
+  - '11:00'
+  - '11:05'
+  - '11:10'
+  - '11:15'
+  - '11:20'
+  - '11:25'
+  - '11:30'
+  - '13:05'
+  - '13:10'
+  - '13:15'
+  - '13:20'
+  - '13:25'
+  - '13:30'
+  - '13:35'
+  - '13:40'
+  - '13:45'
+  - '13:50'
+  - '13:55'
+  - '14:00'
+  - '14:05'
+  - '14:10'
+  - '14:15'
+  - '14:20'
+  - '14:25'
+  - '14:30'
+  - '14:35'
+  - '14:40'
+  - '14:45'
+  - '14:50'
+  - '14:55'
+  - '15:00'
+  - '15:05'
+  - '15:10'
+  - '15:15'
+  - '15:20'
+  - '15:25'
+  - '15:30'
+  force_close_time: '16:00'
+state:
+  encoder: with_volatility
+  kwargs:
+    thresholds:
+      delta_close:
+      - -0.0108
+      - 0.0108
+      delta_open:
+      - -0.0072
+      - 0.0072
+      delta_prev:
+      - -0.00576
+      - 0.00576
+reward:
+  function: fee_aware
+  kwargs:
+    fee_penalty: 1.0
+agent:
+  kwargs:
+    num_decision_points: 54
+    num_states: 81
+    num_actions: 2
+    epsilon_start: 0.5
+    epsilon_decay_per_episode: 0.98
+    epsilon_min: 0.03
+    alpha_mode: per_cell
+    optimistic_init: 0.0
+    tie_break: random
+training:
+  walk_forward:
+    initial_train_days: 300
+    test_window_days: 60
+  episodes_per_window: 3
+evaluation:
+  baselines:
+  - random_binary
+  - always_long
+  - buy_and_hold
+  compute_oracle: true
+  feature_signal_check: true

@@ -61,6 +61,8 @@ def test_group_by_day_handles_lunch_break() -> None:
     assert "12:30" not in days[0].prices_at_decision_times(DECISION_TIMES)
     assert days[0].open_price == 100.0
     assert days[0].close_price == 101.3
+    assert days[0].previous_close is None
+    assert days[1].previous_close == days[0].close_price
 
 
 def test_validate_day_rejects_missing_bar() -> None:

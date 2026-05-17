@@ -15,6 +15,8 @@ class MarketContext:
     decision_index: int
     decision_count: int
     recent_returns: list[float] | None = None
+    current_volume: float | None = None
+    average_volume: float | None = None
 
 
 class StateEncoder(ABC):

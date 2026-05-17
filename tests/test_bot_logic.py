@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
 from apps.bot import (
+    HK_TZ,
     RuntimeState,
+    _next_trading_open,
     _safe_price_for,
     compute_target_quantity,
     handle_decision,
@@ -41,6 +44,13 @@ class MockClient:
         del strategy_id
         return {"data": {"cash": self.cash, "assets": [{"quantity": self.qty}]}}
 
+    def update_holding(self, strategy_id: str, holdings: dict[str, Any]) -> dict[str, Any]:
+        self.patches.append({"strategy_id": strategy_id, "holdings": holdings})
+        self.qty = int(holdings["holdings"][0]["stocks"][0]["quantity"])
+        return {"ok": True}
+
+
+class UnfilledMockClient(MockClient):
     def update_holding(self, strategy_id: str, holdings: dict[str, Any]) -> dict[str, Any]:
         self.patches.append({"strategy_id": strategy_id, "holdings": holdings})
         return {"ok": True}
@@ -118,12 +128,41 @@ def test_force_close_patches_zero_when_live() -> None:
         cfg=load_config("experiments/production_2800.yaml"),
         price=26.52,
         dry_run=False,
+        confirm_attempts=1,
+        confirm_sleep_seconds=0.0,
     )
 
     assert entry["status"] == "force_close"
     assert entry["target_qty"] == 0
+    assert entry["current_qty"] == 49_500
+    assert entry["post_qty"] == 0
     assert len(client.patches) == 1
     assert client.patches[0]["holdings"]["holdings"][0]["stocks"][0]["quantity"] == 0
+
+
+def test_force_close_logs_pending_when_broker_does_not_flatten() -> None:
+    client = UnfilledMockClient(cash=0.0, qty=49_500)
+
+    entry = handle_force_close(
+        client=client,
+        strategy_id="strategy",
+        cfg=load_config("experiments/production_2800.yaml"),
+        price=26.52,
+        dry_run=False,
+        confirm_attempts=1,
+        confirm_sleep_seconds=0.0,
+    )
+
+    assert entry["status"] == "force_close_pending"
+    assert entry["target_qty"] == 0
+    assert entry["current_qty"] == 49_500
+    assert entry["post_qty"] == 49_500
+
+
+def test_production_force_close_is_before_market_close() -> None:
+    cfg = load_config("experiments/production_2800.yaml")
+
+    assert cfg.market.force_close_time == "15:55"
 
 
 def test_safe_price_for_converts_api_timeout_to_error() -> None:
@@ -136,3 +175,15 @@ def test_safe_price_for_converts_api_timeout_to_error() -> None:
 
     assert price is None
     assert error == "TimeoutError: api read timed out"
+
+
+def test_next_trading_open_skips_weekend_from_sunday() -> None:
+    now = datetime(2026, 5, 17, 12, 0, tzinfo=HK_TZ)
+
+    assert _next_trading_open(now) == datetime(2026, 5, 18, 9, 30, tzinfo=HK_TZ)
+
+
+def test_next_trading_open_skips_weekend_from_friday_after_close() -> None:
+    now = datetime(2026, 5, 15, 16, 10, tzinfo=HK_TZ)
+
+    assert _next_trading_open(now) == datetime(2026, 5, 18, 9, 30, tzinfo=HK_TZ)

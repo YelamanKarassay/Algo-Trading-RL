@@ -212,6 +212,8 @@ def handle_force_close(
     cfg: Any,
     price: float,
     dry_run: bool,
+    confirm_attempts: int = 3,
+    confirm_sleep_seconds: float = 2.0,
 ) -> dict[str, Any]:
     cash, current_qty = (
         (float(cfg.market.capital), 0)
@@ -219,16 +221,40 @@ def handle_force_close(
         else get_position_state(client, strategy_id)
     )
     del cash
+    post_qty = current_qty
     if not dry_run and client is not None:
         patch_target(client, strategy_id, _api_symbol(cfg.data.symbol), 0)
+        post_qty = _confirm_target_quantity(
+            client,
+            strategy_id,
+            0,
+            attempts=confirm_attempts,
+            sleep_seconds=confirm_sleep_seconds,
+        )
     return {
         "timestamp": _iso_now(),
-        "status": "force_close",
+        "status": "force_close" if post_qty == 0 else "force_close_pending",
         "price": price,
         "target_qty": 0,
         "current_qty": current_qty,
+        "post_qty": post_qty,
         "dry_run": dry_run,
     }
+def _confirm_target_quantity(
+    client: Any,
+    strategy_id: str,
+    target_qty: int,
+    attempts: int = 3,
+    sleep_seconds: float = 2.0,
+) -> int:
+    post_qty = target_qty
+    for attempt in range(attempts):
+        _, post_qty = get_position_state(client, strategy_id)
+        if post_qty == target_qty:
+            return post_qty
+        if attempt < attempts - 1:
+            time.sleep(sleep_seconds)
+    return post_qty
 def load_runtime_state(path: Path) -> RuntimeState:
     return RuntimeState(**json.loads(path.read_text("utf-8"))) if path.exists() else RuntimeState()
 def save_runtime_state(path: Path, state: RuntimeState) -> None:
@@ -304,6 +330,9 @@ def _sleep_until(target: datetime) -> None:
     time.sleep(max(0.0, (target - datetime.now(HK_TZ)).total_seconds()))
 def _wait_for_open_window(now: datetime) -> None:
     local_now = now.astimezone(HK_TZ)
+    if not _is_trading_day(local_now.date()):
+        _sleep_until(_next_trading_open(local_now))
+        return
     open_buffer = local_now.replace(hour=9, minute=25, second=0, microsecond=0)
     open_time = local_now.replace(hour=9, minute=30, second=0, microsecond=0)
     close_time = local_now.replace(hour=16, minute=5, second=0, microsecond=0)
@@ -313,8 +342,19 @@ def _wait_for_open_window(now: datetime) -> None:
     elif local_now < open_time:
         _sleep_until(open_time)
     elif local_now > close_time:
-        _sleep_until(_next_time(local_now, "09:25"))
-        _sleep_until(_next_time(datetime.now(HK_TZ), "09:30"))
+        _sleep_until(_next_trading_open(local_now))
+def _next_trading_open(now: datetime) -> datetime:
+    target_date = now.astimezone(HK_TZ).date() + timedelta(days=1)
+    while not _is_trading_day(target_date):
+        target_date += timedelta(days=1)
+    return datetime.combine(target_date, datetime.min.time(), tzinfo=HK_TZ).replace(
+        hour=9,
+        minute=30,
+        second=0,
+        microsecond=0,
+    )
+def _is_trading_day(value: date) -> bool:
+    return value.weekday() < 5
 def _parse_now(value: str | None) -> datetime | None:
     return None if value is None else datetime.fromisoformat(value).astimezone(HK_TZ)
 def _iso_now() -> str:

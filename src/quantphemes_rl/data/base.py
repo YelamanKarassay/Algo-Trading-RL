@@ -36,6 +36,7 @@ class DayData:
     date: date
     symbol: str
     bars: list[Bar]
+    previous_close: float | None = None
 
     @property
     def open_price(self) -> float:
@@ -72,21 +73,34 @@ def group_by_day(bars: list[Bar], symbol: str = "") -> list[DayData]:
     grouped: dict[date, list[Bar]] = {}
     for bar in sorted(bars, key=lambda item: item.timestamp):
         grouped.setdefault(bar.timestamp.date(), []).append(bar)
-    return [
-        DayData(date=trading_day, symbol=symbol, bars=day_bars)
-        for trading_day, day_bars in sorted(grouped.items())
-    ]
+    days: list[DayData] = []
+    previous_close: float | None = None
+    for trading_day, day_bars in sorted(grouped.items()):
+        day = DayData(
+            date=trading_day,
+            symbol=symbol,
+            bars=day_bars,
+            previous_close=previous_close,
+        )
+        days.append(day)
+        previous_close = day.close_price
+    return days
 
 
-def validate_day(day: DayData, required_times: list[str]) -> bool:
+def validate_day(day: DayData, required_times: list[str], warn: bool = True) -> bool:
     """Validate that a day contains all required decision bars."""
     present = {_format_time(bar.timestamp) for bar in day.bars}
     missing = [decision_time for decision_time in required_times if decision_time not in present]
     if missing:
-        log.warning(
-            "Rejecting day with missing required bars",
-            extra={"date": day.date.isoformat(), "symbol": day.symbol, "missing_times": missing},
-        )
+        if warn:
+            log.warning(
+                "Rejecting day with missing required bars",
+                extra={
+                    "date": day.date.isoformat(),
+                    "symbol": day.symbol,
+                    "missing_times": missing,
+                },
+            )
         return False
     return True
 

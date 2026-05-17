@@ -73,3 +73,40 @@ def test_cash_never_negative() -> None:
     portfolio.execute(1, 10.0)
 
     assert portfolio.cash >= 0.0
+
+
+def test_three_action_half_position() -> None:
+    portfolio = Portfolio(
+        cash=1_000_000.0,
+        shares=0,
+        position=0,
+        total_fees=0.0,
+        fee_rate_one_side=0.002,
+        lot_size=500,
+        max_position=2,
+    )
+
+    portfolio.execute(1, 10.0)
+
+    assert portfolio.position == 1
+    assert portfolio.shares == 50_000
+    assert portfolio.cash == 499_000.0
+
+
+def test_three_action_full_position_from_half() -> None:
+    portfolio = Portfolio(
+        cash=1_000_000.0,
+        shares=0,
+        position=0,
+        total_fees=0.0,
+        fee_rate_one_side=0.002,
+        lot_size=500,
+        max_position=2,
+    )
+
+    portfolio.execute(1, 10.0)
+    portfolio.execute(2, 10.0)
+
+    assert portfolio.position == 2
+    assert portfolio.cash >= 0.0
+    assert portfolio.shares == 99_500

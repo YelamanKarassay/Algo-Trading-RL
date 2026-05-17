@@ -1,0 +1,55 @@
+inherits: ../_baseline.yaml
+name: research_7568_1h_fee_aware_three_feature_ternary
+description: 'Research sweep: 7568.HK 1h, fee_aware, three_feature, ternary actions.'
+data:
+  path: data/raw/webull_7568_hk_m60.csv
+  symbol: 7568.HK
+  start: '2018-01-01'
+  end: '2026-05-17'
+market:
+  decision_times:
+  - '10:30'
+  - '11:30'
+  - '14:00'
+  - '15:00'
+  force_close_time: '16:00'
+state:
+  encoder: three_feature
+  kwargs:
+    thresholds:
+      delta_close:
+      - -0.039
+      - 0.039
+      delta_open:
+      - -0.026
+      - 0.026
+      delta_prev:
+      - -0.0208
+      - 0.0208
+reward:
+  function: fee_aware
+  kwargs:
+    fee_penalty: 1.0
+agent:
+  kwargs:
+    num_decision_points: 4
+    num_states: 27
+    num_actions: 3
+    epsilon_start: 0.5
+    epsilon_decay_per_episode: 0.98
+    epsilon_min: 0.03
+    alpha_mode: per_cell
+    optimistic_init: 0.0
+    tie_break: random
+training:
+  walk_forward:
+    initial_train_days: 500
+    test_window_days: 125
+  episodes_per_window: 5
+evaluation:
+  baselines:
+  - random_binary
+  - always_long
+  - buy_and_hold
+  compute_oracle: true
+  feature_signal_check: true

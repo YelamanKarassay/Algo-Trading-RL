@@ -79,11 +79,7 @@ def run(path: Path) -> Path:
 
     bars = data_source.load(cfg.data.symbol, cfg.data.start, cfg.data.end, "1h")
     required_times = [*cfg.market.decision_times, cfg.market.force_close_time]
-    days = [
-        day
-        for day in group_by_day(bars, symbol=cfg.data.symbol)
-        if validate_day(day, required_times)
-    ]
+    days = _filter_valid_days(group_by_day(bars, symbol=cfg.data.symbol), required_times)
     windows = _walk_forward(days, cfg)
     train_rows = _train(agent, encoder, reward_fn, windows, cfg)
     _write_csv(result_dir / "train_log.csv", train_rows)
@@ -92,7 +88,7 @@ def run(path: Path) -> Path:
     baseline_evals = {
         name: _evaluate(
             name,
-            build("agent", name),
+            _build_baseline_agent(name, cfg),
             encoder,
             reward_fn,
             windows[-1].test_days,
@@ -128,6 +124,24 @@ def run(path: Path) -> Path:
     generate_report(result_dir)
     _append_index(cfg, result_dir, metrics)
     return result_dir
+
+
+def _build_baseline_agent(name: str, cfg: ExperimentConfig) -> Agent:
+    max_action = int(cfg.agent.kwargs.get("num_actions", 2)) - 1
+    if name in {"always_long", "buy_and_hold"} and max_action > 1:
+        return build("agent", name, action=max_action)
+    return build("agent", name)
+
+
+def _filter_valid_days(days: list[DayData], required_times: list[str]) -> list[DayData]:
+    valid_days = [day for day in days if validate_day(day, required_times, warn=False)]
+    rejected = len(days) - len(valid_days)
+    if rejected:
+        log.warning(
+            "Rejected days with missing required bars",
+            extra={"rejected_days": rejected, "total_days": len(days)},
+        )
+    return valid_days
 
 
 def _train(
@@ -226,6 +240,7 @@ def _run_day(
         total_fees=0.0,
         fee_rate_one_side=cfg.market.fee_bps_one_side / 10_000,
         lot_size=cfg.market.lot_size,
+        max_position=max(1, int(cfg.agent.kwargs.get("num_actions", 2)) - 1),
     )
     env = TradingEnv(
         day=day,

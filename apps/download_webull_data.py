@@ -73,13 +73,7 @@ def download_bars(
     frames: list[pd.DataFrame] = []
     seen_oldest: set[pd.Timestamp] = set()
     while cursor >= start_dt:
-        response = data_client.market_data.get_history_bar(
-            spec.webull_symbol,
-            spec.category,
-            spec.timespan,
-            count=count,
-            end_time=_millis(cursor),
-        )
+        response = _get_history_bar_with_retry(data_client, spec, count, cursor)
         if response.status_code != 200:
             msg = f"{spec.canonical_symbol} returned HTTP {response.status_code}"
             raise RuntimeError(msg)
@@ -104,6 +98,38 @@ def download_bars(
     dates = pd.to_datetime(out["timestamp"]).dt.date
     out = out[(dates >= spec.start) & (dates <= spec.end)]
     return out.reset_index(drop=True)
+
+
+def _get_history_bar_with_retry(
+    data_client: Any,
+    spec: DownloadSpec,
+    count: str,
+    cursor: datetime,
+    max_attempts: int = 6,
+) -> Any:
+    """Fetch one Webull history page with simple backoff for throttling."""
+    for attempt in range(max_attempts):
+        try:
+            return data_client.market_data.get_history_bar(
+                spec.webull_symbol,
+                spec.category,
+                spec.timespan,
+                count=count,
+                end_time=_millis(cursor),
+            )
+        except Exception as exc:
+            text = str(exc)
+            retryable = "429" in text or "TOO_MANY_REQUESTS" in text or "too many requests" in text
+            if not retryable or attempt == max_attempts - 1:
+                raise
+            delay = min(45.0, 5.0 * (attempt + 1))
+            _emit(
+                f"{spec.canonical_symbol} {spec.timespan}: throttled; "
+                f"sleeping {delay:.0f}s before retry {attempt + 2}/{max_attempts}"
+            )
+            time.sleep(delay)
+    msg = "unreachable retry loop exit"
+    raise RuntimeError(msg)
 
 
 def _normalize_bars(

@@ -32,12 +32,14 @@ class TradingEnv:
         self._prices = self.day.prices_at_decision_times([*decision_times, force_close_time])
         self._current_index = 0
         self.initial_value: float | None = None
+        self._peak_value: float = 0.0
 
     def reset(self) -> int:
         """Reset to the first decision point and return the initial state index."""
         self._current_index = 0
         first_price = self._price_at(self.decision_times[0])
         self.initial_value = self.portfolio.market_value(first_price)
+        self._peak_value = self.initial_value
         return self._encode(self.decision_times[0])
 
     def step(self, action: int) -> tuple[int, float, bool, dict[str, Any]]:
@@ -63,6 +65,12 @@ class TradingEnv:
             close_fee = self.portfolio.execute(0, next_price)
 
         v_t_plus_1 = self.portfolio.market_value(next_price)
+        self._peak_value = max(self._peak_value, v_t_plus_1)
+        drawdown = (
+            0.0
+            if self._peak_value <= 0.0
+            else max(0.0, self._peak_value - v_t_plus_1) / self._peak_value
+        )
         info = {
             "price": current_price,
             "next_price": next_price,
@@ -77,6 +85,8 @@ class TradingEnv:
             "shares": self.portfolio.shares,
             "v_t": v_t,
             "v_t_plus_1": v_t_plus_1,
+            "drawdown": drawdown,
+            "done": done,
         }
         reward = self.reward_fn.compute(v_t, v_t_plus_1, info)
 
@@ -106,12 +116,39 @@ class TradingEnv:
     def _context(self, decision_time: str) -> MarketContext:
         decision_index = self.decision_times.index(decision_time)
         prev_time = self.decision_times[max(0, decision_index - 1)]
+        current_bar_index = self._bar_index(decision_time)
+        recent_returns = self._recent_returns(current_bar_index)
+        current_volume = self.day.bars[current_bar_index].volume
+        volumes = [
+            bar.volume
+            for bar in self.day.bars[: current_bar_index + 1]
+            if bar.volume is not None and bar.volume > 0
+        ]
         return MarketContext(
             current_price=self._price_at(decision_time),
             today_open=self.day.open_price,
-            yesterday_close=self.day.open_price,
+            yesterday_close=self.day.previous_close or self.day.open_price,
             prev_decision_price=self._price_at(prev_time),
             decision_index=decision_index,
             decision_count=len(self.decision_times),
-            recent_returns=None,
+            recent_returns=recent_returns,
+            current_volume=current_volume,
+            average_volume=sum(volumes) / len(volumes) if volumes else None,
         )
+
+    def _bar_index(self, decision_time: str) -> int:
+        for index, bar in enumerate(self.day.bars):
+            if bar.timestamp.strftime("%H:%M") == decision_time:
+                return index
+        msg = f"Decision time {decision_time} not found in day bars."
+        raise KeyError(msg)
+
+    def _recent_returns(self, current_bar_index: int, lookback: int = 20) -> list[float]:
+        start = max(1, current_bar_index - lookback + 1)
+        returns: list[float] = []
+        for index in range(start, current_bar_index + 1):
+            previous = self.day.bars[index - 1].close
+            current = self.day.bars[index].close
+            if previous > 0:
+                returns.append(current / previous - 1.0)
+        return returns
