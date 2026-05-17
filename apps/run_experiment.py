@@ -64,7 +64,7 @@ def main(argv: list[str] | None = None) -> None:
     print(f"completed {result_dir}")  # noqa: T201
 
 
-def run(path: Path) -> Path:
+def run(path: Path, write_report: bool = True) -> Path:
     """Execute an experiment and return its result directory."""
     cfg = load_config(path)
     _set_seeds(cfg.seed)
@@ -121,7 +121,8 @@ def run(path: Path) -> Path:
     )
 
     agent.save(result_dir / "q_state.pkl")
-    generate_report(result_dir)
+    if write_report:
+        generate_report(result_dir)
     _append_index(cfg, result_dir, metrics)
     return result_dir
 

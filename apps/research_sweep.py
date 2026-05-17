@@ -144,7 +144,7 @@ def _run(args: argparse.Namespace) -> None:
         paths = paths[: args.limit]
     for path in paths:
         print(f"running {path}")  # noqa: T201
-        run(path)
+        run(path, write_report=False)
 
 
 def _completed_experiment_names(results_root: Path = Path("results")) -> set[str]:
