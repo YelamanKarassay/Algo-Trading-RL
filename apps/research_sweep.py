@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import subprocess
 import sys
@@ -72,6 +73,11 @@ def main(argv: list[str] | None = None) -> None:
     runner.add_argument("--config-dir", type=Path, default=Path("experiments/research"))
     runner.add_argument("--pattern", default="*.yaml")
     runner.add_argument("--limit", type=int)
+    runner.add_argument(
+        "--skip-existing",
+        action="store_true",
+        help="Skip configs whose experiment name already appears under results/.",
+    )
 
     report = subparsers.add_parser("report")
     report.add_argument("--glob", default="results/research_*")
@@ -131,11 +137,29 @@ def _run(args: argparse.Namespace) -> None:
     paths = sorted(
         path for path in args.config_dir.glob(args.pattern) if not path.name.startswith("_")
     )
+    completed = _completed_experiment_names() if args.skip_existing else set()
+    if completed:
+        paths = [path for path in paths if path.stem not in completed]
     if args.limit is not None:
         paths = paths[: args.limit]
     for path in paths:
         print(f"running {path}")  # noqa: T201
         run(path)
+
+
+def _completed_experiment_names(results_root: Path = Path("results")) -> set[str]:
+    names: set[str] = set()
+    if not results_root.exists():
+        return names
+    for metrics_path in results_root.glob("*/metrics.json"):
+        config_path = metrics_path.parent / "config.snapshot.yaml"
+        if not config_path.exists():
+            continue
+        try:
+            names.add(str(yaml.safe_load(config_path.read_text(encoding="utf-8"))["name"]))
+        except (OSError, KeyError, TypeError, yaml.YAMLError, json.JSONDecodeError):
+            continue
+    return names
 
 
 def _specs(preset: str) -> list[ResearchSpec]:

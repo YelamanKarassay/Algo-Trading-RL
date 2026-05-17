@@ -40,7 +40,7 @@ def generate_report(results_dir: Path) -> Path:
     days = [
         day
         for day in group_by_day(bars, symbol=cfg.data.symbol)
-        if validate_day(day, required_times)
+        if validate_day(day, required_times, warn=False)
     ]
     signal_table = mutual_info_per_feature(days, encoder, cfg.market.decision_times)
     cov_table = state_coverage(agent)
