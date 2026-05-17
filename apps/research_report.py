@@ -32,7 +32,7 @@ def generate_research_report(result_dirs: list[Path], out: Path) -> Path:
 
 
 def _load_results(result_dirs: list[Path]) -> pd.DataFrame:
-    rows = []
+    rows_by_name: dict[str, dict[str, Any]] = {}
     for result_dir in result_dirs:
         metrics_path = result_dir / "metrics.json"
         config_path = result_dir / "config.snapshot.yaml"
@@ -41,8 +41,10 @@ def _load_results(result_dirs: list[Path]) -> pd.DataFrame:
         metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
         config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
         row = _row(result_dir, config, metrics)
-        rows.append(row)
-    return pd.DataFrame(rows)
+        existing = rows_by_name.get(row["name"])
+        if existing is None or row["result_dir"] > existing["result_dir"]:
+            rows_by_name[row["name"]] = row
+    return pd.DataFrame(rows_by_name.values())
 
 
 def _row(result_dir: Path, config: dict[str, Any], metrics: dict[str, Any]) -> dict[str, Any]:
