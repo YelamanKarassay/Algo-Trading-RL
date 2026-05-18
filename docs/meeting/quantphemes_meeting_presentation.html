@@ -164,8 +164,8 @@
           <tr><td>RL_FACOV</td><td>7226.HK</td><td>30m</td><td>fee-aware / z-score</td><td>cash/half/full</td><td><span class="pill warn">watch fees</span></td></tr>
           <tr><td>RL_BROAD_A</td><td>2800.HK</td><td>30m</td><td>fee-aware / z-score</td><td>cash/half/full</td><td><span class="pill run">paper running</span></td></tr>
           <tr><td>RL_BROAD_B</td><td>2828.HK</td><td>30m</td><td>log-return / volatility</td><td>cash/half/full</td><td><span class="pill run">paper running</span></td></tr>
-          <tr><td>Collaborative HSI 1H</td><td>2800.HK</td><td>1h</td><td>QP-spec / three_feature</td><td>cash/full</td><td><span class="pill ready">integrated</span></td></tr>
-          <tr><td>Collaborative Leverage 1H</td><td>7226.HK</td><td>1h</td><td>QP-spec / three_feature</td><td>cash/full</td><td><span class="pill ready">integrated</span></td></tr>
+          <tr><td>Collaborative HSI 1H</td><td>2800.HK</td><td>1h</td><td>QP-spec / three_feature</td><td>cash/full</td><td><span class="pill ready">OOS -4.77%</span></td></tr>
+          <tr><td>Collaborative Leverage 1H</td><td>7226.HK</td><td>1h</td><td>QP-spec / three_feature</td><td>cash/full</td><td><span class="pill ready">OOS -3.12%</span></td></tr>
         </tbody>
       </table>
     </section>
@@ -182,14 +182,28 @@
           <tr><td>RL_FACOV</td><td>Ternary 7226.HK model with fee-aware reward; useful for position sizing but watched for turnover.</td></tr>
           <tr><td>RL_BROAD_A</td><td>30m 2800.HK broad benchmark that shows behavior on lower-volatility HSI exposure.</td></tr>
           <tr><td>RL_BROAD_B</td><td>30m 2828.HK broad/federated comparison using volatility-aware state and ternary actions.</td></tr>
-          <tr><td>Collaborative HSI 1H</td><td>Imported 1h 2800.HK QP-spec Q-table; external benchmark against our 30m grid.</td></tr>
-          <tr><td>Collaborative Leverage 1H</td><td>Imported 1h 7226.HK Q-table; compares slower leveraged cadence with our internal 30m policies.</td></tr>
+          <tr><td>Collaborative HSI 1H</td><td>External 1h 2800.HK benchmark; OOS net -4.77% over 750 days, alpha -6.46 pp vs B&amp;H.</td></tr>
+          <tr><td>Collaborative Leverage 1H</td><td>External 1h 7226.HK benchmark; OOS net -3.12% over 450 days, alpha -3.56 pp vs B&amp;H.</td></tr>
         </tbody>
       </table>
     </section>
 
     <section class="slide">
       <span class="num">05</span>
+      <div class="eyebrow">Collaborative 1H Test Results</div>
+      <h2>Different windows, useful external benchmarks</h2>
+      <table>
+        <thead><tr><th>Strategy</th><th>Period</th><th>Days</th><th>Net Return</th><th>Fees</th><th>Round Trips</th><th>Win Rate</th><th>Alpha vs B&amp;H</th></tr></thead>
+        <tbody>
+          <tr><td>Collaborative HSI 1H</td><td>2022-05-13 → 2025-06-09</td><td>750</td><td>-4.77%</td><td>HKD 53,801</td><td>491</td><td>24.24%</td><td>-6.46 pp</td></tr>
+          <tr><td>Collaborative Leverage 1H</td><td>2024-04-05 → 2026-02-06</td><td>450</td><td>-3.12%</td><td>HKD 29,372</td><td>288</td><td>15.97%</td><td>-3.56 pp</td></tr>
+        </tbody>
+      </table>
+      <p>These are not same-window comparisons with the 30-minute grid. They show that the 1-hour imported policies are compatible, but their own out-of-sample tests were net negative after fees.</p>
+    </section>
+
+    <section class="slide">
+      <span class="num">06</span>
       <div class="eyebrow">Leveraged ETF Rationale</div>
       <h2>Why more paper slots use 7226.HK</h2>
       <div class="grid two">
@@ -200,7 +214,7 @@
     </section>
 
     <section class="slide">
-      <span class="num">06</span>
+      <span class="num">07</span>
       <div class="eyebrow">Backtest Snapshot</div>
       <h2>Selected models beat buy-and-hold in the test window after fees</h2>
       <div class="grid two">
@@ -228,7 +242,7 @@
     </section>
 
     <section class="slide">
-      <span class="num">07</span>
+      <span class="num">08</span>
       <div class="eyebrow">Architecture</div>
       <h2>Shared core, thin applications</h2>
       <div class="grid three">
@@ -240,7 +254,7 @@
     </section>
 
     <section class="slide">
-      <span class="num">08</span>
+      <span class="num">09</span>
       <div class="eyebrow">Data and Configuration</div>
       <h2>Strategy behavior is declared, validated, and reproducible</h2>
       <div class="grid two">
@@ -252,7 +266,7 @@
     </section>
 
     <section class="slide">
-      <span class="num">09</span>
+      <span class="num">10</span>
       <div class="eyebrow">YAML Reference</div>
       <h2>A strategy is visible in one config file</h2>
       <pre><code>name: production_rl_broad_a
@@ -274,7 +288,7 @@ agent:
     </section>
 
     <section class="slide">
-      <span class="num">10</span>
+      <span class="num">11</span>
       <div class="eyebrow">Plugin Registry</div>
       <h2>New strategy ideas do not require rewriting the runner</h2>
       <div class="grid four">
@@ -287,7 +301,7 @@ agent:
     </section>
 
     <section class="slide">
-      <span class="num">11</span>
+      <span class="num">12</span>
       <div class="eyebrow">Training Loop</div>
       <h2>How a Q-table is produced</h2>
       <div class="grid two">
@@ -299,7 +313,7 @@ agent:
     </section>
 
     <section class="slide">
-      <span class="num">12</span>
+      <span class="num">13</span>
       <div class="eyebrow">Live Runtime</div>
       <h2>How one paper decision is made</h2>
       <ol>
@@ -313,7 +327,7 @@ agent:
     </section>
 
     <section class="slide">
-      <span class="num">13</span>
+      <span class="num">14</span>
       <div class="eyebrow">Collaborative Model Integration</div>
       <h2>External Q-tables now run through the same code path</h2>
       <div class="grid two">
@@ -325,7 +339,7 @@ agent:
     </section>
 
     <section class="slide">
-      <span class="num">14</span>
+      <span class="num">15</span>
       <div class="eyebrow">Framework Choices</div>
       <h2>Why these tools?</h2>
       <div class="grid two small">
@@ -337,7 +351,7 @@ agent:
     </section>
 
     <section class="slide">
-      <span class="num">15</span>
+      <span class="num">16</span>
       <div class="eyebrow">Trading Rules</div>
       <h2>Financial assumptions are explicit and tested</h2>
       <div class="grid three">
@@ -348,7 +362,7 @@ agent:
     </section>
 
     <section class="slide">
-      <span class="num">16</span>
+      <span class="num">17</span>
       <div class="eyebrow">Diagnostics</div>
       <h2>We diagnose the model, not only the final NAV</h2>
       <div class="grid three">
@@ -359,7 +373,7 @@ agent:
     </section>
 
     <section class="slide">
-      <span class="num">17</span>
+      <span class="num">18</span>
       <div class="eyebrow">Live Operations</div>
       <h2>Production-style deployment is observable and reversible</h2>
       <div class="grid two">
@@ -371,7 +385,7 @@ agent:
     </section>
 
     <section class="slide">
-      <span class="num">18</span>
+      <span class="num">19</span>
       <div class="eyebrow">Quantphemes API Integration</div>
       <h2>Broker behavior shaped the deployment design</h2>
       <ul>
@@ -383,7 +397,7 @@ agent:
     </section>
 
     <section class="slide">
-      <span class="num">19</span>
+      <span class="num">20</span>
       <div class="eyebrow">Quality Controls</div>
       <h2>Trading invariants are protected by tests</h2>
       <div class="grid two">
@@ -395,7 +409,7 @@ agent:
     </section>
 
     <section class="slide">
-      <span class="num">20</span>
+      <span class="num">21</span>
       <div class="eyebrow">Documentation</div>
       <h2>The project has a public knowledge base</h2>
       <div class="grid two">
@@ -406,7 +420,7 @@ agent:
     </section>
 
     <section class="slide">
-      <span class="num">21</span>
+      <span class="num">22</span>
       <div class="eyebrow">Current Boundaries</div>
       <h2>What the report does and does not claim</h2>
       <div class="grid two">
@@ -417,7 +431,7 @@ agent:
     </section>
 
     <section class="slide">
-      <span class="num">22</span>
+      <span class="num">23</span>
       <div class="eyebrow">Discussion Points for Quantphemes</div>
       <h2>Platform clarifications that affect paper operation</h2>
       <ul>
@@ -429,7 +443,7 @@ agent:
     </section>
 
     <section class="slide">
-      <span class="num">23</span>
+      <span class="num">24</span>
       <div class="eyebrow">Closing</div>
       <h2>We have a working research-to-paper pipeline</h2>
       <p class="lead">The project is ready for a serious technical discussion: what the models do, how the system is built, how paper decisions are generated, and where Quantphemes platform behavior shapes deployment.</p>
