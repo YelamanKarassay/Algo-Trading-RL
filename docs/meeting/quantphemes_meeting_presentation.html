@@ -92,16 +92,6 @@
     .fill { height: 100%; background: linear-gradient(90deg, var(--green), #61bd87); border-radius: 999px; }
     .fill.blue { background: linear-gradient(90deg, var(--blue), #78a0e3); }
     .fill.amber { background: linear-gradient(90deg, var(--amber), #e7b75d); }
-    .notes {
-      margin-top: 28px;
-      padding: 16px 18px;
-      background: #edf2ed;
-      border-left: 5px solid var(--green);
-      border-radius: 8px;
-      color: #34413c;
-    }
-    .notes strong { display: block; font-size: 14px; text-transform: uppercase; letter-spacing: .08em; color: var(--green); margin-bottom: 6px; }
-    .notes p { margin: 0; font-size: 16px; }
     .small p, .small li { font-size: 18px; }
     a { color: var(--blue); text-decoration: none; }
     code { background: #e8eee8; padding: 2px 6px; border-radius: 5px; }
@@ -124,7 +114,6 @@
       <div class="eyebrow">Quantphemes RL</div>
       <h1>Q-Learning Paper-Trading Fleet</h1>
       <p class="lead">A reproducible research, diagnostics, and live deployment system for Hong Kong ETF trading strategies.</p>
-      <div class="notes"><strong>Speaker notes</strong><p>Open by framing this as an engineering system, not just a single trading script. The goal is to show that research, backtesting, diagnostics, and live paper execution are connected and auditable.</p></div>
     </section>
 
     <section class="slide">
@@ -136,7 +125,6 @@
         <div class="card"><div class="metric">Explain</div><p>Use reports, oracle checks, coverage, and fee diagnostics to understand why the model behaves a certain way.</p></div>
         <div class="card"><div class="metric">Deploy</div><p>Promote selected <code>q_state.pkl</code> artifacts to paper trading through the Quantphemes API.</p></div>
       </div>
-      <div class="notes"><strong>Speaker notes</strong><p>The important message is continuity. We do not train one way and trade another way. The same state encoders and agent artifacts are used in both tracks.</p></div>
     </section>
 
     <section class="slide">
@@ -149,7 +137,6 @@
         <div class="card"><div class="label">Core tests</div><div class="metric">85</div><p>Full suite passes with lint and docs build.</p></div>
         <div class="card"><div class="label">Deployment</div><div class="metric">Azure</div><p>Systemd services with JSON decision logs.</p></div>
       </div>
-      <div class="notes"><strong>Speaker notes</strong><p>Mention that 7299.HK was researched but stopped because the broker rejected it as a tradable symbol. This is exactly why paper deployment and API validation are necessary.</p></div>
     </section>
 
     <section class="slide">
@@ -168,7 +155,6 @@
           <tr><td>GROUPMATE_7226_1H</td><td>7226.HK</td><td>QP-spec / three_feature</td><td>cash/full</td><td><span class="pill ready">integrated</span></td></tr>
         </tbody>
       </table>
-      <div class="notes"><strong>Speaker notes</strong><p>Emphasize that the fleet is built for observation. We are comparing behavior under controlled differences rather than claiming a single model is final.</p></div>
     </section>
 
     <section class="slide">
@@ -197,7 +183,6 @@
           </div>
         </div>
       </div>
-      <div class="notes"><strong>Speaker notes</strong><p>Be clear: this is a paper-trading candidate filter, not proof of live profitability. The key control is that fees are already included.</p></div>
     </section>
 
     <section class="slide">
@@ -210,7 +195,6 @@
         <div class="card"><h3>Core</h3><p>TradingEnv, Portfolio, StateEncoder, RewardFunction, and Agent are shared by training and live execution.</p></div>
       </div>
       <p><strong>Flow:</strong> YAML config → registry → data/state/reward/agent → training report + Q-table → live bot → Quantphemes API.</p>
-      <div class="notes"><strong>Speaker notes</strong><p>This slide explains maintainability. A new idea usually means a new YAML or plugin, not editing the live bot.</p></div>
     </section>
 
     <section class="slide">
@@ -223,7 +207,6 @@
         <div class="card"><h3>Pydantic validation</h3><p>Bad config or malformed data fails early instead of silently entering training or live execution.</p></div>
         <div class="card"><h3>Inheritance</h3><p>Experiments inherit baseline assumptions and override only the hypothesis-specific fields.</p></div>
       </div>
-      <div class="notes"><strong>Speaker notes</strong><p>Explain that this is one of the biggest engineering wins. The model is not hidden in a notebook. A reviewer can open a YAML file and see what changed.</p></div>
     </section>
 
     <section class="slide">
@@ -237,7 +220,6 @@
         <div class="card"><h3>Agent</h3><p><code>qtable</code>, baselines, and future model plugins.</p></div>
       </div>
       <p>The runner asks the registry to build the selected components. This keeps the production path consistent as the research space grows.</p>
-      <div class="notes"><strong>Speaker notes</strong><p>Use this to show Quantphemes that our architecture is modular. Adding a new encoder or reward is controlled and testable.</p></div>
     </section>
 
     <section class="slide">
@@ -250,7 +232,6 @@
         <div class="card"><h3>Q update</h3><p>The agent updates one cell: decision point, state, action. Visit counts determine the per-cell learning rate.</p></div>
         <div class="card"><h3>Artifact output</h3><p>The selected result folder contains <code>q_state.pkl</code>, config snapshot, metrics, logs, and HTML diagnostics.</p></div>
       </div>
-      <div class="notes"><strong>Speaker notes</strong><p>Stress the fee timing rule. NAV before action and NAV after action are measured carefully so fees are penalized correctly.</p></div>
     </section>
 
     <section class="slide">
@@ -265,7 +246,6 @@
         <li>Convert action into target quantity using lot size and available cash.</li>
         <li>Patch Quantphemes holding and write one structured JSON log line.</li>
       </ol>
-      <div class="notes"><strong>Speaker notes</strong><p>This is a useful slide for explaining live behavior. Every trade can be traced through these six steps.</p></div>
     </section>
 
     <section class="slide">
@@ -278,7 +258,6 @@
         <div class="card"><h3>Production configs</h3><p>Two YAMLs define asset, decision times, thresholds, artifact paths, and runtime log locations.</p></div>
         <div class="card"><h3>Bug fix</h3><p>The live bot now uses previous decision price for <code>delta_prev</code>, not the current price.</p></div>
       </div>
-      <div class="notes"><strong>Speaker notes</strong><p>Make clear that this fix was in our live execution path and benefits all three-feature Q-tables.</p></div>
     </section>
 
     <section class="slide">
@@ -291,7 +270,6 @@
         <div class="card"><h3>Pytest + Ruff</h3><p>Fast regression testing and style checks before deployment.</p></div>
         <div class="card"><h3>MkDocs Material</h3><p>Searchable, polished documentation for mixed technical and non-technical readers.</p></div>
       </div>
-      <div class="notes"><strong>Speaker notes</strong><p>Connect each framework to project risk reduction: validation prevents config mistakes, tests protect trading rules, docs make operations repeatable.</p></div>
     </section>
 
     <section class="slide">
@@ -303,7 +281,6 @@
         <div class="card"><div class="metric">EOD</div><p>Live bot targets flat quantity near the close; each training day starts fresh.</p></div>
         <div class="card"><div class="metric">Lot size</div><p>Target quantity respects exchange lot constraints and available cash.</p></div>
       </div>
-      <div class="notes"><strong>Speaker notes</strong><p>These rules matter because small intraday ETF moves can be smaller than round-trip fees. The environment was built to make that visible.</p></div>
     </section>
 
     <section class="slide">
@@ -315,7 +292,6 @@
         <div class="card"><h3>Oracle</h3><p>Perfect-foresight upper bound under the same fee model.</p></div>
         <div class="card"><h3>Signal Checks</h3><p>Feature bins, conditional returns, and mutual information.</p></div>
       </div>
-      <div class="notes"><strong>Speaker notes</strong><p>This is where we separate feature weakness from policy weakness. Without diagnostics, a bad result is hard to interpret.</p></div>
     </section>
 
     <section class="slide">
@@ -328,7 +304,6 @@
         <div class="card"><h3>Secrets</h3><p>API key and portfolio/strategy IDs are in server-side <code>.env</code>, never committed.</p></div>
         <div class="card"><h3>Rollback</h3><p>Stop a service, restore a previous Q-table, restart only that bot.</p></div>
       </div>
-      <div class="notes"><strong>Speaker notes</strong><p>Mention that this is designed for safe paper-trading operations. It is not a notebook that must stay open on a laptop.</p></div>
     </section>
 
     <section class="slide">
@@ -341,7 +316,6 @@
         <li>Holding PATCH calls are tested through a sync helper with mocked network tests.</li>
         <li>Symbol tradeability is validated separately from price availability.</li>
       </ul>
-      <div class="notes"><strong>Speaker notes</strong><p>This is a good place to ask Quantphemes about symbol whitelists, paper execution visibility, and any limitations on strategy automation for the current plan.</p></div>
     </section>
 
     <section class="slide">
@@ -354,7 +328,6 @@
         <div class="card"><h3>Experiment tests</h3><p>Config inheritance, end-to-end smoke run, report rendering, oracle, signal diagnostics, and comparison tool.</p></div>
         <div class="card"><h3>CI gates</h3><p><code>ruff check .</code>, <code>pytest -q</code>, and <code>mkdocs build --strict</code>.</p></div>
       </div>
-      <div class="notes"><strong>Speaker notes</strong><p>Explain that the most dangerous bugs in trading systems are tiny timing and accounting errors. We explicitly test those cases.</p></div>
     </section>
 
     <section class="slide">
@@ -366,7 +339,6 @@
         <div class="card"><h3>Docs Portal</h3><p><a href="https://yelamankarassay.github.io/Algo-Trading-RL/">yelamankarassay.github.io/Algo-Trading-RL/</a></p></div>
       </div>
       <p>The docs cover architecture, data requirements, experiment workflow, live runbook, API notes, research notes, and developer extension rules.</p>
-      <div class="notes"><strong>Speaker notes</strong><p>Explain that documentation is part of operational safety. A future user should be able to reproduce experiments and understand deployment without guessing.</p></div>
     </section>
 
     <section class="slide">
@@ -378,7 +350,6 @@
         <div class="card"><h3>It does not claim</h3><p>The current paper strategies are production-profitable. Live observation and broker behavior still matter.</p></div>
       </div>
       <p>Backtests include fees, but they should be read as candidate filters and diagnostics, not final investment evidence.</p>
-      <div class="notes"><strong>Speaker notes</strong><p>This slide helps keep the meeting credible. We are confident about engineering readiness, careful about strategy claims.</p></div>
     </section>
 
     <section class="slide">
@@ -391,7 +362,6 @@
         <li>What are the exact strategy automation limits under the current plan?</li>
         <li>Can Quantphemes provide clearer intraday historical endpoint access or export formats?</li>
       </ul>
-      <div class="notes"><strong>Speaker notes</strong><p>Use this slide to move from presentation to discussion. The most useful Quantphemes input is around API/platform constraints, not model internals.</p></div>
     </section>
 
     <section class="slide">
@@ -399,7 +369,6 @@
       <div class="eyebrow">Closing</div>
       <h2>We have a working research-to-paper pipeline</h2>
       <p class="lead">The project is ready for a serious technical discussion: what the models do, how the system is built, how paper decisions are generated, and where Quantphemes platform behavior shapes deployment.</p>
-      <div class="notes"><strong>Speaker notes</strong><p>Close with confidence but avoid overclaiming. The system is ready for disciplined paper trading and collaboration, while live strategy edge remains something to observe carefully.</p></div>
     </section>
   </main>
 </body>
