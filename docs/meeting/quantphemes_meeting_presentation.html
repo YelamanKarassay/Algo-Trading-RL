@@ -114,9 +114,32 @@
       p, li { font-size: 18px; }
     }
     @media print {
+      @page { size: A4 landscape; margin: 0; }
       body { background: white; }
       .deck { padding: 0; gap: 0; }
-      .slide { min-height: 100vh; border-radius: 0; box-shadow: none; page-break-after: always; }
+      .slide {
+        width: 297mm;
+        height: 210mm;
+        min-height: 0;
+        border-radius: 0;
+        box-shadow: none;
+        page-break-after: always;
+        break-after: page;
+        padding: 22mm;
+        overflow: hidden;
+      }
+      h1 { font-size: 58px; }
+      h2 { font-size: 38px; }
+      h3 { font-size: 18px; margin-bottom: 8px; }
+      p, li { font-size: 15px; line-height: 1.35; }
+      .lead { font-size: 22px; }
+      .metric { font-size: 34px; }
+      .card { min-height: 0; padding: 14px; }
+      th, td { padding: 7px 8px; font-size: 11px; }
+      th { font-size: 9px; }
+      pre { font-size: 10px; line-height: 1.32; padding: 12px; }
+      .small p, .small li { font-size: 13px; }
+      .bar-row { font-size: 13px; }
     }
   </style>
 </head>
