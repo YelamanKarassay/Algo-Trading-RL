@@ -207,18 +207,33 @@
       <p>The deployed portfolio is intentionally diversified across assets, reward functions, encoders, and action spaces. This lets us observe whether behavior changes are caused by the model family, asset microstructure, state representation, or reward shaping.</p>
       <table>
         <thead>
-          <tr><th>Bot</th><th>Asset</th><th>Reward / Encoder</th><th>Actions</th><th>Backtest Alpha vs B&amp;H</th><th>Trades</th><th>Fees</th><th>Status</th></tr>
+          <tr><th>Bot</th><th>Asset</th><th>Decision Interval</th><th>Reward / Encoder</th><th>Actions</th><th>Backtest Alpha vs B&amp;H</th><th>Trades</th><th>Fees</th><th>Status</th></tr>
         </thead>
         <tbody>
-          <tr><td><strong>RL_CROSS</strong></td><td>7226.HK</td><td>drawdown_penalty / three_feature</td><td>cash/full</td><td>+2.56%</td><td>30</td><td>HKD 59,795</td><td><span class="status run">paper running</span></td></tr>
-          <tr><td><strong>RL_VOL</strong></td><td>7226.HK</td><td>drawdown_penalty / with_volatility</td><td>cash/full</td><td>+2.56%</td><td>42</td><td>HKD 83,814</td><td><span class="status run">paper running</span></td></tr>
-          <tr><td><strong>RL_FACOV</strong></td><td>7226.HK</td><td>fee_aware / zscore_bins</td><td>cash/half/full</td><td>+2.56%</td><td>96</td><td>HKD 125,729</td><td><span class="status warn">watch fees</span></td></tr>
-          <tr><td><strong>RL_BROAD_A</strong></td><td>2800.HK</td><td>fee_aware / zscore_bins</td><td>cash/half/full</td><td>+1.29%</td><td>10</td><td>HKD 9,902</td><td><span class="status run">paper running</span></td></tr>
-          <tr><td><strong>RL_BROAD_B</strong></td><td>2828.HK</td><td>log_return / with_volatility</td><td>cash/half/full</td><td>+1.30%</td><td>18</td><td>HKD 19,263</td><td><span class="status run">paper running</span></td></tr>
-          <tr><td><strong>Collaborative HSI 1H</strong></td><td>2800.HK</td><td>QP-spec thresholds / three_feature</td><td>cash/full</td><td>imported artifact</td><td>n/a</td><td>n/a</td><td><span class="status ready">integrated</span></td></tr>
-          <tr><td><strong>Collaborative Leverage 1H</strong></td><td>7226.HK</td><td>QP-spec thresholds / three_feature</td><td>cash/full</td><td>imported artifact</td><td>n/a</td><td>n/a</td><td><span class="status ready">integrated</span></td></tr>
+          <tr><td><strong>RL_CROSS</strong></td><td>7226.HK</td><td>30 min</td><td>drawdown_penalty / three_feature</td><td>cash/full</td><td>+2.56%</td><td>30</td><td>HKD 59,795</td><td><span class="status run">paper running</span></td></tr>
+          <tr><td><strong>RL_VOL</strong></td><td>7226.HK</td><td>30 min</td><td>drawdown_penalty / with_volatility</td><td>cash/full</td><td>+2.56%</td><td>42</td><td>HKD 83,814</td><td><span class="status run">paper running</span></td></tr>
+          <tr><td><strong>RL_FACOV</strong></td><td>7226.HK</td><td>30 min</td><td>fee_aware / zscore_bins</td><td>cash/half/full</td><td>+2.56%</td><td>96</td><td>HKD 125,729</td><td><span class="status warn">watch fees</span></td></tr>
+          <tr><td><strong>RL_BROAD_A</strong></td><td>2800.HK</td><td>30 min</td><td>fee_aware / zscore_bins</td><td>cash/half/full</td><td>+1.29%</td><td>10</td><td>HKD 9,902</td><td><span class="status run">paper running</span></td></tr>
+          <tr><td><strong>RL_BROAD_B</strong></td><td>2828.HK</td><td>30 min</td><td>log_return / with_volatility</td><td>cash/half/full</td><td>+1.30%</td><td>18</td><td>HKD 19,263</td><td><span class="status run">paper running</span></td></tr>
+          <tr><td><strong>Collaborative HSI 1H</strong></td><td>2800.HK</td><td>1 hour</td><td>QP-spec thresholds / three_feature</td><td>cash/full</td><td>imported artifact</td><td>n/a</td><td>n/a</td><td><span class="status ready">integrated</span></td></tr>
+          <tr><td><strong>Collaborative Leverage 1H</strong></td><td>7226.HK</td><td>1 hour</td><td>QP-spec thresholds / three_feature</td><td>cash/full</td><td>imported artifact</td><td>n/a</td><td>n/a</td><td><span class="status ready">integrated</span></td></tr>
         </tbody>
       </table>
+
+      <h3>How To Read Each Bot</h3>
+      <div class="grid two">
+        <div class="card"><h3>RL_CROSS</h3><p>A 30-minute 7226.HK leveraged-ETF cross-check using the compact three-feature state and drawdown-penalty reward. It is useful as a simple leveraged candidate: few moving parts, binary action, and direct comparison against the original state design.</p></div>
+        <div class="card"><h3>RL_VOL</h3><p>A 30-minute 7226.HK variant that adds volatility regime information. It tests whether the agent should behave differently when intraday movement is quiet versus active. This is important for leveraged ETFs because volatility regimes can change quickly.</p></div>
+        <div class="card"><h3>RL_FACOV</h3><p>A 30-minute 7226.HK fee-aware, z-score, ternary-action model. It can choose cash, half position, or full position. It is valuable because it tests position sizing, but it is also the main fee-watch candidate because the backtest produced the highest trade count.</p></div>
+        <div class="card"><h3>RL_BROAD_A</h3><p>A 30-minute 2800.HK broad-market benchmark using fee-aware reward and z-score state. This keeps the project anchored to the original production asset and shows how the same framework behaves on a less leveraged, lower-volatility ETF.</p></div>
+        <div class="card"><h3>RL_BROAD_B</h3><p>A 30-minute 2828.HK broad-market/federated-partner candidate with volatility-aware state. It gives another non-7226 comparison point and helps us see whether volatility-state behavior generalizes beyond one ETF.</p></div>
+        <div class="card"><h3>Collaborative HSI 1H</h3><p>A 1-hour imported 2800.HK Q-table converted into our standard artifact format. It is useful as an external benchmark because it follows the simpler QP-spec three-feature binary setup rather than our newer 30-minute grid.</p></div>
+        <div class="card"><h3>Collaborative Leverage 1H</h3><p>A 1-hour imported 7226.HK Q-table with the same simple three-feature binary structure. It lets us compare our internally trained 30-minute leveraged models against an independently prepared leveraged 1-hour policy.</p></div>
+      </div>
+
+      <h3>Why The Fleet Uses More Leveraged ETF Candidates</h3>
+      <p>The project started from 2800.HK because it is the natural broad Hang Seng ETF benchmark and a safer first production-style asset. However, the fee model is demanding: a full round trip costs around 40 bps. Many ordinary intraday moves in 2800.HK are smaller than that, so a Q-table can rationally learn to stay in cash or trade rarely.</p>
+      <p>Leveraged ETFs such as 7226.HK can have larger intraday price movement, which gives the model more room to overcome transaction costs and makes state/reward differences easier to observe during paper trading. This does not mean leveraged ETFs are automatically better or safer. It means they are useful research instruments for testing whether the RL policy can identify enough movement to justify exposure after fees. The fleet therefore keeps 2800.HK as the broad benchmark while giving more paper slots to leveraged candidates where the signal-to-fee ratio may be more visible.</p>
 
       <div class="grid two">
         <div class="figure">
