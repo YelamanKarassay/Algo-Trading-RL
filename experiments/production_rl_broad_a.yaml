@@ -1,0 +1,7 @@
+inherits: research/research_2800_30m_fee_aware_zscore_bins_ternary.yaml
+name: production_rl_broad_a
+description: Paper deployment for RL_BROAD_A, 2800.HK 30m fee-aware z-score ternary Q-table.
+artifacts:
+  q_state_path: artifacts/deploy/rl_broad_a_q_state.pkl
+  log_dir: artifacts/logs/rl_broad_a/
+  runtime_state_path: artifacts/runtime_state_rl_broad_a.json

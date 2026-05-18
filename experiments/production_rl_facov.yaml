@@ -1,0 +1,7 @@
+inherits: research/research_7226_30m_fee_aware_zscore_bins_ternary.yaml
+name: production_rl_facov
+description: "Paper deployment for RL_FACOV, 7226.HK 30m fee-aware z-score ternary Q-table. Watch fees: alert at 13%."
+artifacts:
+  q_state_path: artifacts/deploy/rl_facov_q_state.pkl
+  log_dir: artifacts/logs/rl_facov/
+  runtime_state_path: artifacts/runtime_state_rl_facov.json

@@ -1,0 +1,7 @@
+inherits: research/research_2828_30m_log_return_with_volatility_ternary.yaml
+name: production_rl_broad_b
+description: Paper deployment for RL_BROAD_B, 2828.HK 30m log-return volatility ternary Q-table.
+artifacts:
+  q_state_path: artifacts/deploy/rl_broad_b_q_state.pkl
+  log_dir: artifacts/logs/rl_broad_b/
+  runtime_state_path: artifacts/runtime_state_rl_broad_b.json
