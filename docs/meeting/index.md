@@ -8,4 +8,4 @@ These standalone HTML files are prepared for the Quantphemes discussion. They do
 | [Presentation deck](quantphemes_meeting_presentation.html) | Slide-style HTML presentation without speaker notes, suitable for screen sharing. |
 | [Speaker speech](quantphemes_speaker_speech.html) | Separate slide-by-slide speaking script for presenter preparation or printing. |
 
-The report and deck summarize the current paper-trading fleet, including the five selected active strategies and the two integrated groupmate 1-hour Q-table bots.
+The report and deck summarize the current paper-trading fleet, including the five selected active strategies and the two integrated collaborative 1-hour Q-table bots.

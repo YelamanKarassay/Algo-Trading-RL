@@ -178,7 +178,7 @@
       <h2>Executive Summary</h2>
       <p>Quantphemes RL is a compact but complete trading research platform. It starts from historical ETF data, trains tabular Q-learning agents under a strict fee and lot-size model, produces diagnostics and HTML reports, then deploys selected Q-tables to paper trading without retraining in production.</p>
       <div class="grid kpi">
-        <div class="card"><div class="label">Paper bot fleet</div><div class="metric">7</div><div class="note">Five selected bots plus two imported groupmate 1-hour bots integrated into the same live path.</div></div>
+        <div class="card"><div class="label">Paper bot fleet</div><div class="metric">7</div><div class="note">Five selected bots plus two imported collaborative 1-hour models integrated into the same live path.</div></div>
         <div class="card"><div class="label">Active assets</div><div class="metric">3</div><div class="note">2800.HK, 2828.HK, and 7226.HK. 7299.HK was halted after broker rejection.</div></div>
         <div class="card"><div class="label">Experiment space</div><div class="metric">125+</div><div class="note">Asset, reward, encoder, and action-space combinations tested in the 30-minute research grid.</div></div>
         <div class="card"><div class="label">Core invariant</div><div class="metric">20 bps</div><div class="note">One-side fee, charged only on position changes and mirrored in training, oracle, and live sizing.</div></div>
@@ -215,8 +215,8 @@
           <tr><td><strong>RL_FACOV</strong></td><td>7226.HK</td><td>fee_aware / zscore_bins</td><td>cash/half/full</td><td>+2.56%</td><td>96</td><td>HKD 125,729</td><td><span class="status warn">watch fees</span></td></tr>
           <tr><td><strong>RL_BROAD_A</strong></td><td>2800.HK</td><td>fee_aware / zscore_bins</td><td>cash/half/full</td><td>+1.29%</td><td>10</td><td>HKD 9,902</td><td><span class="status run">paper running</span></td></tr>
           <tr><td><strong>RL_BROAD_B</strong></td><td>2828.HK</td><td>log_return / with_volatility</td><td>cash/half/full</td><td>+1.30%</td><td>18</td><td>HKD 19,263</td><td><span class="status run">paper running</span></td></tr>
-          <tr><td><strong>GROUPMATE_2800_1H</strong></td><td>2800.HK</td><td>QP-spec thresholds / three_feature</td><td>cash/full</td><td>imported artifact</td><td>n/a</td><td>n/a</td><td><span class="status ready">integrated</span></td></tr>
-          <tr><td><strong>GROUPMATE_7226_1H</strong></td><td>7226.HK</td><td>QP-spec thresholds / three_feature</td><td>cash/full</td><td>imported artifact</td><td>n/a</td><td>n/a</td><td><span class="status ready">integrated</span></td></tr>
+          <tr><td><strong>Collaborative HSI 1H</strong></td><td>2800.HK</td><td>QP-spec thresholds / three_feature</td><td>cash/full</td><td>imported artifact</td><td>n/a</td><td>n/a</td><td><span class="status ready">integrated</span></td></tr>
+          <tr><td><strong>Collaborative Leverage 1H</strong></td><td>7226.HK</td><td>QP-spec thresholds / three_feature</td><td>cash/full</td><td>imported artifact</td><td>n/a</td><td>n/a</td><td><span class="status ready">integrated</span></td></tr>
         </tbody>
       </table>
 
@@ -359,7 +359,7 @@
       </table>
 
       <h3>Plugin Registry</h3>
-      <p>The registry is a small internal factory. Plugins register themselves by kind and name, for example <code>state_encoder: zscore_bins</code> or <code>reward_function: fee_aware</code>. The experiment runner and live bot call <code>build(kind, name, **kwargs)</code> instead of hard-coding classes. This is why we can run five internally trained bots plus two groupmate artifacts through the same production path.</p>
+      <p>The registry is a small internal factory. Plugins register themselves by kind and name, for example <code>state_encoder: zscore_bins</code> or <code>reward_function: fee_aware</code>. The experiment runner and live bot call <code>build(kind, name, **kwargs)</code> instead of hard-coding classes. This is why we can run five internally trained bots plus two collaborative artifacts through the same production path.</p>
     </section>
 
     <section id="training">
@@ -495,9 +495,9 @@
         </tbody>
       </table>
 
-      <h3>Groupmate Bot Integration</h3>
-      <p>The two groupmate ZIP artifacts contained standalone bot scripts and Q-table pickle files. Their Q-tables were structurally compatible with the repository agent format: <code>5 × 27 × 2</code> tables, visit counts, and the same three-feature threshold structure. They were converted into the standard <code>QTableAgent.save</code> artifact format so they can run through the same <code>apps.bot</code> live path as the internally trained models.</p>
-      <p>During that integration, a live-state bug was fixed: <code>delta_prev</code> must use the previous decision price, not the current price. Without that fix, the third feature would be artificially neutral during live trading. The fix benefits both internal and groupmate Q-tables.</p>
+      <h3>Collaborative Model Integration</h3>
+      <p>The two collaborative ZIP artifacts contained standalone bot scripts and Q-table pickle files. Their Q-tables were structurally compatible with the repository agent format: <code>5 × 27 × 2</code> tables, visit counts, and the same three-feature threshold structure. They were converted into the standard <code>QTableAgent.save</code> artifact format so they can run through the same <code>apps.bot</code> live path as the internally trained models.</p>
+      <p>During that integration, a live-state bug was fixed: <code>delta_prev</code> must use the previous decision price, not the current price. Without that fix, the third feature would be artificially neutral during live trading. The fix benefits both internal and collaborative Q-tables.</p>
     </section>
 
     <section id="documentation">

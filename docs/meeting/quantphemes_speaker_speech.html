@@ -100,7 +100,7 @@
     <section class="slide">
       <div class="cue"><span class="num">3</span>Current Status</div>
       <h2>Seven-bot paper fleet integrated in one repo</h2>
-      <p>At the moment the repository supports a seven-bot paper fleet. Five strategies are our selected research candidates, and two more are groupmate Q-table bots that have been converted into our standard deployment format.</p>
+      <p>At the moment the repository supports a seven-bot paper fleet. Five strategies are our selected research candidates, and two more are collaborative Q-table models that have been converted into our standard deployment format.</p>
       <p>The active assets are 2800.HK, 2828.HK, and 7226.HK. We also researched 7299.HK, but the Quantphemes platform rejected it as a tradeable symbol, so those candidates were halted. That is a useful platform finding, not just a model result.</p>
     </section>
 
@@ -154,10 +154,10 @@
     </section>
 
     <section class="slide">
-      <div class="cue"><span class="num">11</span>Groupmate Integration</div>
+      <div class="cue"><span class="num">11</span>Collaborative Model Integration</div>
       <h2>External Q-tables now run through the same code path</h2>
-      <p>The groupmate Q-tables were structurally compatible with our agent: five decision points, twenty-seven states, two actions, and visit counts. I converted them into our standard QTableAgent artifact format and created production YAML files for them.</p>
-      <p>While integrating them, I also fixed a live-state issue in our bot: delta_prev must use the previous decision price, not the current price. This fix benefits both our models and the groupmate imports.</p>
+      <p>The collaborative Q-tables were structurally compatible with our agent: five decision points, twenty-seven states, two actions, and visit counts. I converted them into our standard QTableAgent artifact format and created production YAML files for them.</p>
+      <p>While integrating them, I also fixed a live-state issue in our bot: delta_prev must use the previous decision price, not the current price. This fix benefits both our models and the collaborative imports.</p>
     </section>
 
     <section class="slide">

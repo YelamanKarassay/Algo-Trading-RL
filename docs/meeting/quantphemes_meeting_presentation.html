@@ -132,7 +132,7 @@
       <div class="eyebrow">Current Status</div>
       <h2>Seven-bot paper fleet integrated in one repo</h2>
       <div class="grid four">
-        <div class="card"><div class="label">Bots</div><div class="metric">7</div><p>Five selected strategies plus two groupmate 1-hour imports.</p></div>
+        <div class="card"><div class="label">Bots</div><div class="metric">7</div><p>Five selected strategies plus two collaborative 1-hour imports.</p></div>
         <div class="card"><div class="label">Assets</div><div class="metric">3</div><p>2800.HK, 2828.HK, and 7226.HK.</p></div>
         <div class="card"><div class="label">Core tests</div><div class="metric">85</div><p>Full suite passes with lint and docs build.</p></div>
         <div class="card"><div class="label">Deployment</div><div class="metric">Azure</div><p>Systemd services with JSON decision logs.</p></div>
@@ -151,8 +151,8 @@
           <tr><td>RL_FACOV</td><td>7226.HK</td><td>fee-aware / z-score</td><td>cash/half/full</td><td><span class="pill warn">watch fees</span></td></tr>
           <tr><td>RL_BROAD_A</td><td>2800.HK</td><td>fee-aware / z-score</td><td>cash/half/full</td><td><span class="pill run">paper running</span></td></tr>
           <tr><td>RL_BROAD_B</td><td>2828.HK</td><td>log-return / volatility</td><td>cash/half/full</td><td><span class="pill run">paper running</span></td></tr>
-          <tr><td>GROUPMATE_2800_1H</td><td>2800.HK</td><td>QP-spec / three_feature</td><td>cash/full</td><td><span class="pill ready">integrated</span></td></tr>
-          <tr><td>GROUPMATE_7226_1H</td><td>7226.HK</td><td>QP-spec / three_feature</td><td>cash/full</td><td><span class="pill ready">integrated</span></td></tr>
+          <tr><td>Collaborative HSI 1H</td><td>2800.HK</td><td>QP-spec / three_feature</td><td>cash/full</td><td><span class="pill ready">integrated</span></td></tr>
+          <tr><td>Collaborative Leverage 1H</td><td>7226.HK</td><td>QP-spec / three_feature</td><td>cash/full</td><td><span class="pill ready">integrated</span></td></tr>
         </tbody>
       </table>
     </section>
@@ -250,10 +250,10 @@
 
     <section class="slide">
       <span class="num">10</span>
-      <div class="eyebrow">Groupmate Integration</div>
+      <div class="eyebrow">Collaborative Model Integration</div>
       <h2>External Q-tables now run through the same code path</h2>
       <div class="grid two">
-        <div class="card"><h3>Compatibility</h3><p>Both groupmate tables are <code>5 × 27 × 2</code> with visit counts and the same three-feature threshold structure.</p></div>
+        <div class="card"><h3>Compatibility</h3><p>Both collaborative tables are <code>5 × 27 × 2</code> with visit counts and the same three-feature threshold structure.</p></div>
         <div class="card"><h3>Conversion</h3><p>Their standalone pickle files were converted into our standard <code>QTableAgent.save</code> artifact format.</p></div>
         <div class="card"><h3>Production configs</h3><p>Two YAMLs define asset, decision times, thresholds, artifact paths, and runtime log locations.</p></div>
         <div class="card"><h3>Bug fix</h3><p>The live bot now uses previous decision price for <code>delta_prev</code>, not the current price.</p></div>
