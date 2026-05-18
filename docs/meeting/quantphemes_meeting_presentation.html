@@ -95,6 +95,18 @@
     .small p, .small li { font-size: 18px; }
     a { color: var(--blue); text-decoration: none; }
     code { background: #e8eee8; padding: 2px 6px; border-radius: 5px; }
+    pre {
+      margin: 0;
+      padding: 20px;
+      overflow-x: auto;
+      background: #10231c;
+      color: #edf8f1;
+      border-radius: 14px;
+      border: 1px solid #254b3b;
+      font-size: 16px;
+      line-height: 1.45;
+    }
+    pre code { background: transparent; color: inherit; padding: 0; border-radius: 0; }
     @media (max-width: 900px) {
       .slide { padding: 30px; }
       .two, .three, .four { grid-template-columns: 1fr; }
@@ -162,12 +174,18 @@
       <span class="num">04</span>
       <div class="eyebrow">Bot Interpretation</div>
       <h2>What each live candidate is meant to teach us</h2>
-      <div class="grid two small">
-        <div class="card"><h3>RL_CROSS / RL_VOL</h3><p>30-minute 7226.HK leveraged candidates. One keeps the compact baseline state; one adds volatility regime awareness.</p></div>
-        <div class="card"><h3>RL_FACOV</h3><p>30-minute 7226.HK fee-aware z-score model with cash, half, and full position actions. Useful, but fee pressure must be watched.</p></div>
-        <div class="card"><h3>RL_BROAD_A / RL_BROAD_B</h3><p>30-minute broad ETF candidates on 2800.HK and 2828.HK. They anchor the research to less leveraged benchmarks.</p></div>
-        <div class="card"><h3>Collaborative 1H Models</h3><p>Imported 1-hour QP-spec Q-tables for 2800.HK and 7226.HK. They provide external comparison against our internal 30-minute grid.</p></div>
-      </div>
+      <table>
+        <thead><tr><th>Bot</th><th>What it teaches us</th></tr></thead>
+        <tbody>
+          <tr><td>RL_CROSS</td><td>Simple 30m 7226.HK leveraged baseline: compact state, binary action, drawdown control.</td></tr>
+          <tr><td>RL_VOL</td><td>Tests whether 7226.HK decisions improve when the policy knows the current volatility regime.</td></tr>
+          <tr><td>RL_FACOV</td><td>Ternary 7226.HK model with fee-aware reward; useful for position sizing but watched for turnover.</td></tr>
+          <tr><td>RL_BROAD_A</td><td>30m 2800.HK broad benchmark that shows behavior on lower-volatility HSI exposure.</td></tr>
+          <tr><td>RL_BROAD_B</td><td>30m 2828.HK broad/federated comparison using volatility-aware state and ternary actions.</td></tr>
+          <tr><td>Collaborative HSI 1H</td><td>Imported 1h 2800.HK QP-spec Q-table; external benchmark against our 30m grid.</td></tr>
+          <tr><td>Collaborative Leverage 1H</td><td>Imported 1h 7226.HK Q-table; compares slower leveraged cadence with our internal 30m policies.</td></tr>
+        </tbody>
+      </table>
     </section>
 
     <section class="slide">
@@ -226,15 +244,37 @@
       <div class="eyebrow">Data and Configuration</div>
       <h2>Strategy behavior is declared, validated, and reproducible</h2>
       <div class="grid two">
-        <div class="card"><h3>Data adapters</h3><p>CSV, Futu CSV, and Bloomberg XLSX are normalized into timezone-aware Hong Kong bars and grouped into trading days.</p></div>
+        <div class="card"><h3>Data sources</h3><p>The current research data mainly comes from Webull and Futu exports/downloads, normalized into HK-time bars.</p></div>
         <div class="card"><h3>YAML configs</h3><p>Asset, date range, fee, decision times, encoder, reward, agent, and artifacts are visible in one file.</p></div>
         <div class="card"><h3>Pydantic validation</h3><p>Bad config or malformed data fails early instead of silently entering training or live execution.</p></div>
-        <div class="card"><h3>Inheritance</h3><p>Experiments inherit baseline assumptions and override only the hypothesis-specific fields.</p></div>
+        <div class="card"><h3>Supported adapters</h3><p>Bloomberg XLSX is supported for future exports, but it was not the main source for the current paper fleet.</p></div>
       </div>
     </section>
 
     <section class="slide">
       <span class="num">09</span>
+      <div class="eyebrow">YAML Reference</div>
+      <h2>A strategy is visible in one config file</h2>
+      <pre><code>name: production_rl_broad_a
+data:
+  source: csv
+  path: data/raw/2800_hk_30m_webull_futu.csv
+  symbol: 2800.HK
+market:
+  decision_times: ["10:00", "10:30", "11:00", "11:30", "13:30", "14:00", "14:30", "15:00", "15:30"]
+  fee_bps_one_side: 20
+state:
+  encoder: zscore_bins
+reward:
+  function: fee_aware
+agent:
+  type: qtable
+  kwargs:
+    num_actions: 3</code></pre>
+    </section>
+
+    <section class="slide">
+      <span class="num">10</span>
       <div class="eyebrow">Plugin Registry</div>
       <h2>New strategy ideas do not require rewriting the runner</h2>
       <div class="grid four">
@@ -247,7 +287,7 @@
     </section>
 
     <section class="slide">
-      <span class="num">10</span>
+      <span class="num">11</span>
       <div class="eyebrow">Training Loop</div>
       <h2>How a Q-table is produced</h2>
       <div class="grid two">
@@ -259,7 +299,7 @@
     </section>
 
     <section class="slide">
-      <span class="num">11</span>
+      <span class="num">12</span>
       <div class="eyebrow">Live Runtime</div>
       <h2>How one paper decision is made</h2>
       <ol>
@@ -273,7 +313,7 @@
     </section>
 
     <section class="slide">
-      <span class="num">12</span>
+      <span class="num">13</span>
       <div class="eyebrow">Collaborative Model Integration</div>
       <h2>External Q-tables now run through the same code path</h2>
       <div class="grid two">
@@ -285,7 +325,7 @@
     </section>
 
     <section class="slide">
-      <span class="num">13</span>
+      <span class="num">14</span>
       <div class="eyebrow">Framework Choices</div>
       <h2>Why these tools?</h2>
       <div class="grid two small">
@@ -297,7 +337,7 @@
     </section>
 
     <section class="slide">
-      <span class="num">14</span>
+      <span class="num">15</span>
       <div class="eyebrow">Trading Rules</div>
       <h2>Financial assumptions are explicit and tested</h2>
       <div class="grid three">
@@ -308,7 +348,7 @@
     </section>
 
     <section class="slide">
-      <span class="num">15</span>
+      <span class="num">16</span>
       <div class="eyebrow">Diagnostics</div>
       <h2>We diagnose the model, not only the final NAV</h2>
       <div class="grid three">
@@ -319,7 +359,7 @@
     </section>
 
     <section class="slide">
-      <span class="num">16</span>
+      <span class="num">17</span>
       <div class="eyebrow">Live Operations</div>
       <h2>Production-style deployment is observable and reversible</h2>
       <div class="grid two">
@@ -331,7 +371,7 @@
     </section>
 
     <section class="slide">
-      <span class="num">17</span>
+      <span class="num">18</span>
       <div class="eyebrow">Quantphemes API Integration</div>
       <h2>Broker behavior shaped the deployment design</h2>
       <ul>
@@ -343,7 +383,7 @@
     </section>
 
     <section class="slide">
-      <span class="num">18</span>
+      <span class="num">19</span>
       <div class="eyebrow">Quality Controls</div>
       <h2>Trading invariants are protected by tests</h2>
       <div class="grid two">
@@ -355,7 +395,7 @@
     </section>
 
     <section class="slide">
-      <span class="num">19</span>
+      <span class="num">20</span>
       <div class="eyebrow">Documentation</div>
       <h2>The project has a public knowledge base</h2>
       <div class="grid two">
@@ -366,7 +406,7 @@
     </section>
 
     <section class="slide">
-      <span class="num">20</span>
+      <span class="num">21</span>
       <div class="eyebrow">Current Boundaries</div>
       <h2>What the report does and does not claim</h2>
       <div class="grid two">
@@ -377,7 +417,7 @@
     </section>
 
     <section class="slide">
-      <span class="num">21</span>
+      <span class="num">22</span>
       <div class="eyebrow">Discussion Points for Quantphemes</div>
       <h2>Platform clarifications that affect paper operation</h2>
       <ul>
@@ -389,7 +429,7 @@
     </section>
 
     <section class="slide">
-      <span class="num">22</span>
+      <span class="num">23</span>
       <div class="eyebrow">Closing</div>
       <h2>We have a working research-to-paper pipeline</h2>
       <p class="lead">The project is ready for a serious technical discussion: what the models do, how the system is built, how paper decisions are generated, and where Quantphemes platform behavior shapes deployment.</p>

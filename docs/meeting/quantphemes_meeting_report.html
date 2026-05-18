@@ -129,6 +129,23 @@
       border-radius: 8px;
     }
     code { background: #e9eee9; padding: 2px 5px; border-radius: 5px; }
+    pre {
+      margin: 18px 0 24px;
+      padding: 18px 20px;
+      overflow-x: auto;
+      background: #10231c;
+      color: #edf8f1;
+      border-radius: 12px;
+      border: 1px solid #254b3b;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    pre code {
+      background: transparent;
+      color: inherit;
+      padding: 0;
+      border-radius: 0;
+    }
     ul { padding-left: 22px; }
     .footer { margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
     @media (max-width: 860px) {
@@ -222,13 +239,13 @@
 
       <h3>How To Read Each Bot</h3>
       <div class="grid two">
-        <div class="card"><h3>RL_CROSS</h3><p>A 30-minute 7226.HK leveraged-ETF cross-check using the compact three-feature state and drawdown-penalty reward. It is useful as a simple leveraged candidate: few moving parts, binary action, and direct comparison against the original state design.</p></div>
-        <div class="card"><h3>RL_VOL</h3><p>A 30-minute 7226.HK variant that adds volatility regime information. It tests whether the agent should behave differently when intraday movement is quiet versus active. This is important for leveraged ETFs because volatility regimes can change quickly.</p></div>
-        <div class="card"><h3>RL_FACOV</h3><p>A 30-minute 7226.HK fee-aware, z-score, ternary-action model. It can choose cash, half position, or full position. It is valuable because it tests position sizing, but it is also the main fee-watch candidate because the backtest produced the highest trade count.</p></div>
-        <div class="card"><h3>RL_BROAD_A</h3><p>A 30-minute 2800.HK broad-market benchmark using fee-aware reward and z-score state. This keeps the project anchored to the original production asset and shows how the same framework behaves on a less leveraged, lower-volatility ETF.</p></div>
-        <div class="card"><h3>RL_BROAD_B</h3><p>A 30-minute 2828.HK broad-market/federated-partner candidate with volatility-aware state. It gives another non-7226 comparison point and helps us see whether volatility-state behavior generalizes beyond one ETF.</p></div>
-        <div class="card"><h3>Collaborative HSI 1H</h3><p>A 1-hour imported 2800.HK Q-table converted into our standard artifact format. It is useful as an external benchmark because it follows the simpler QP-spec three-feature binary setup rather than our newer 30-minute grid.</p></div>
-        <div class="card"><h3>Collaborative Leverage 1H</h3><p>A 1-hour imported 7226.HK Q-table with the same simple three-feature binary structure. It lets us compare our internally trained 30-minute leveraged models against an independently prepared leveraged 1-hour policy.</p></div>
+        <div class="card"><h3>RL_CROSS</h3><p>This is the cleanest 30-minute 7226.HK leveraged-ETF cross-check. It uses the compact three-feature state and a drawdown-penalty reward with binary cash/full actions. The point of this bot is not complexity; it is a controlled leveraged baseline that answers: if we keep the state simple and penalize unstable intraday NAV paths, does the model still find moments where exposure is worth the fee?</p><p>It is useful in discussion because it is easy to explain. If this bot behaves sensibly, then the core state and reward timing are probably coherent. If it behaves poorly, the issue is less likely to be from exotic feature engineering and more likely from the basic signal or cost hurdle.</p></div>
+        <div class="card"><h3>RL_VOL</h3><p>This 30-minute 7226.HK bot keeps the same leveraged ETF setting but adds a volatility-regime encoder. It tests whether the policy should react differently during quiet periods versus active intraday periods. For a leveraged ETF this matters because the same raw price move can mean different things depending on the volatility environment.</p><p>The live observation question is whether volatility context makes the bot more selective. Ideally, it should avoid treating every small move as equal and instead condition exposure on whether the market is actually moving enough to justify risk and transaction cost.</p></div>
+        <div class="card"><h3>RL_FACOV</h3><p>This is the most experimental selected 30-minute 7226.HK candidate. It combines fee-aware reward, z-score state bins, and ternary actions: cash, half position, and full position. The model can scale exposure instead of making only all-or-nothing decisions, which is closer to how a human might reduce risk when the signal is not strong.</p><p>The reason it is marked as fee-watch is that the backtest produced the highest trade count and the highest fee bill among the selected models. That makes it informative but also risky: if live paper logs show frequent position changes without clear benefit, this is the first candidate to reduce or stop.</p></div>
+        <div class="card"><h3>RL_BROAD_A</h3><p>This 30-minute 2800.HK bot keeps the project connected to the original broad Hang Seng ETF objective. It uses fee-aware reward and z-score state bins, so price movement is interpreted relative to recent volatility rather than only through fixed thresholds.</p><p>It is important because 2800.HK is less leveraged and usually has smaller intraday movement. If the bot trades rarely or stays in cash, that may be rational after the 40 bps round-trip cost. In the fleet, this bot acts as a broad-market benchmark and a reality check against the more active leveraged ETF candidates.</p></div>
+        <div class="card"><h3>RL_BROAD_B</h3><p>This 30-minute 2828.HK bot adds a second broad ETF comparison point. It uses a log-return reward with a volatility-aware encoder and ternary actions. The goal is to see whether volatility-regime behavior generalizes beyond one asset and whether a non-7226 ETF can still produce useful intraday decisions after fees.</p><p>It also supports the federated-partner framing of the project: the same codebase can evaluate a related ETF universe without changing the training or live-bot architecture. That makes it a useful bridge between our internal tests and external collaboration.</p></div>
+        <div class="card"><h3>Collaborative HSI 1H</h3><p>This is a 1-hour 2800.HK Q-table imported from the collaborative artifacts and converted into our standard <code>QTableAgent</code> save format. It follows the simpler QP-spec setup: three-feature state, 27 states, and binary cash/full actions.</p><p>Its value is comparison. It gives us an external 1-hour benchmark against our internally trained 30-minute models. If it behaves differently, we can separate cadence effects, training-data effects, and feature/reward design effects instead of mixing all of them together.</p></div>
+        <div class="card"><h3>Collaborative Leverage 1H</h3><p>This is the leveraged counterpart to the collaborative HSI model: a 1-hour 7226.HK Q-table with the same simple three-feature binary structure. It lets us compare a slower, independently prepared leveraged policy against the 30-minute 7226.HK models trained in our research grid.</p><p>Because it uses the same broad artifact interface as our own agents, it can be deployed, logged, and monitored through the exact same live bot path. That is useful evidence that the repository can integrate external Q-table policies without creating a separate production script.</p></div>
       </div>
 
       <h3>Why The Fleet Uses More Leveraged ETF Candidates</h3>
@@ -319,7 +336,7 @@
       <table>
         <thead><tr><th>Module</th><th>Purpose</th><th>Rationale</th></tr></thead>
         <tbody>
-          <tr><td><code>data/</code></td><td>Normalizes CSV, Futu, and Bloomberg exports into HK-time bars.</td><td>Separates vendor formats from the RL environment.</td></tr>
+          <tr><td><code>data/</code></td><td>Normalizes Webull/Futu CSV data into HK-time bars; Bloomberg XLSX is supported as an adapter but was not the main source for this research batch.</td><td>Separates vendor formats from the RL environment.</td></tr>
           <tr><td><code>state/</code></td><td>Encodes market context into finite discrete state IDs.</td><td>Preserves explainability and lets features be compared by plugin.</td></tr>
           <tr><td><code>reward/</code></td><td>Converts NAV changes into learning signal.</td><td>Allows log-return, fee-aware, drawdown, and bias experiments.</td></tr>
           <tr><td><code>agent/</code></td><td>Implements Q-table, baselines, persistence, and visit counts.</td><td>One artifact format supports training, diagnostics, federation, and live use.</td></tr>
@@ -337,15 +354,15 @@
 
     <section id="data-config">
       <h2>Data, Configuration, and Plugin System</h2>
-      <p>The system is designed so experiment behavior is visible in YAML rather than hidden in notebooks. Historical data, market assumptions, state encoder, reward function, agent class, training parameters, and evaluation settings are all declared in configuration files under <code>experiments/</code>.</p>
+      <p>The system is designed so experiment behavior is visible in YAML rather than hidden in notebooks. Historical data, market assumptions, state encoder, reward function, agent class, training parameters, and evaluation settings are all declared in configuration files under <code>experiments/</code>. In practice, the research data used so far has mainly come from Webull and Futu exports/downloads. Bloomberg support exists in the codebase for future terminal exports, but it was not the primary data source for the current paper-bot fleet.</p>
 
       <div class="grid two">
         <div class="card">
           <h3>Accepted Data Inputs</h3>
           <ul>
-            <li><strong>CSV:</strong> timestamp, open, high, low, close, volume.</li>
-            <li><strong>Futu CSV:</strong> time_key, open, close, high, low, volume, turnover.</li>
-            <li><strong>Bloomberg XLSX:</strong> Date, Open, High, Low, Last_Price, Volume, with case-insensitive field handling.</li>
+            <li><strong>Webull / generic CSV:</strong> timestamp, open, high, low, close, volume. This is the main practical input path for the current 30-minute research batch after data is downloaded and saved under <code>data/raw/</code>.</li>
+            <li><strong>Futu CSV:</strong> time_key, open, close, high, low, volume, turnover. This is also part of the current practical data workflow and maps into the same internal <code>Bar</code> format.</li>
+            <li><strong>Bloomberg XLSX:</strong> supported for future use with Date, Open, High, Low, Last_Price, Volume, and case-insensitive field handling. It is included for compatibility but was not the main source for the current results.</li>
             <li><strong>Timezone rule:</strong> all bars are normalized to Hong Kong time and grouped into trading days.</li>
           </ul>
         </div>
@@ -372,6 +389,46 @@
           <tr><td><code>artifacts</code></td><td>Q-table path, runtime state path, log directory.</td><td>Lets multiple live bots run independently from the same repository.</td></tr>
         </tbody>
       </table>
+
+      <h3>YAML Reference Example</h3>
+      <p>The example below shows the style of configuration used for a paper candidate. It is intentionally readable: a reviewer can see the asset, data file, interval, reward, encoder, action space, and live artifact paths without opening Python code.</p>
+      <pre><code>inherits: _baseline.yaml
+name: production_rl_broad_a
+description: 30-minute 2800.HK fee-aware z-score ternary paper strategy
+
+data:
+  source: csv
+  path: data/raw/2800_hk_30m_webull_futu.csv
+  symbol: 2800.HK
+  start: 2018-01-01
+  end: 2026-05-15
+
+market:
+  capital: 1000000
+  fee_bps_one_side: 20
+  decision_times: ["10:00", "10:30", "11:00", "11:30", "13:30", "14:00", "14:30", "15:00", "15:30"]
+  force_close_time: "16:00"
+  lot_size: 500
+
+state:
+  encoder: zscore_bins
+  kwargs:
+    lookback: 20
+
+reward:
+  function: fee_aware
+  kwargs: {}
+
+agent:
+  type: qtable
+  kwargs:
+    num_actions: 3
+    tie_break: random
+
+artifacts:
+  q_state_path: artifacts/deploy/rl_broad_a_q_state.pkl
+  log_dir: artifacts/logs/rl_broad_a/
+  runtime_state_path: artifacts/runtime_state_rl_broad_a.json</code></pre>
 
       <h3>Plugin Registry</h3>
       <p>The registry is a small internal factory. Plugins register themselves by kind and name, for example <code>state_encoder: zscore_bins</code> or <code>reward_function: fee_aware</code>. The experiment runner and live bot call <code>build(kind, name, **kwargs)</code> instead of hard-coding classes. This is why we can run five internally trained bots plus two collaborative artifacts through the same production path.</p>
@@ -522,7 +579,7 @@
         <thead><tr><th>Document Area</th><th>What It Explains</th></tr></thead>
         <tbody>
           <tr><td>Architecture</td><td>How configs, plugins, environments, agents, diagnostics, and live execution fit together.</td></tr>
-          <tr><td>Data Guide</td><td>Required fields, Bloomberg/Futu/CSV formats, HK lunch break, 16:00 close, and timezone pitfalls.</td></tr>
+          <tr><td>Data Guide</td><td>Required fields, Webull/Futu CSV workflow, supported Bloomberg import format, HK lunch break, 16:00 close, and timezone pitfalls.</td></tr>
           <tr><td>Runbook</td><td>Environment variables, dry-run/live commands, Azure deployment, systemd monitoring, rollback.</td></tr>
           <tr><td>Developer Guide</td><td>How to add plugins and tests without breaking the registry or production path.</td></tr>
         </tbody>

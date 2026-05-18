@@ -114,9 +114,11 @@
     <section class="slide">
       <div class="cue"><span class="num">5</span>Bot Interpretation</div>
       <h2>What each live candidate is meant to teach us</h2>
-      <p>RL_CROSS and RL_VOL are both 30-minute 7226.HK leveraged candidates. RL_CROSS keeps the compact original three-feature structure, while RL_VOL adds volatility regime awareness. Together, they help us see whether a simple state is enough or whether volatility context changes live decisions.</p>
-      <p>RL_FACOV is also a 30-minute 7226.HK model, but it uses z-score bins, a fee-aware reward, and ternary actions. It is useful because it can scale exposure between cash, half, and full, but it also needs fee monitoring because it traded more often in backtest.</p>
-      <p>RL_BROAD_A and RL_BROAD_B are the broad ETF comparison models on 2800.HK and 2828.HK. The two collaborative models are 1-hour imported Q-tables, useful as external benchmarks against our internal 30-minute grid.</p>
+      <p>RL_CROSS is the cleanest 30-minute leveraged baseline: 7226.HK, compact three-feature state, binary action, and drawdown penalty. It tells us whether the simplest leveraged setup can find exposure after fees without relying on complex features.</p>
+      <p>RL_VOL keeps the same 7226.HK setting but adds volatility regime context. This tells us whether the agent behaves more intelligently when it knows whether the market is quiet or active.</p>
+      <p>RL_FACOV is the most experimental selected bot. It uses 7226.HK, z-score bins, fee-aware reward, and cash/half/full actions. It tests position sizing, but it is also the main fee-watch candidate because it generated the most trades in backtest.</p>
+      <p>RL_BROAD_A is our 2800.HK broad HSI benchmark, and RL_BROAD_B is the 2828.HK comparison model. These are important because they show how the same framework behaves on less leveraged instruments.</p>
+      <p>The two collaborative models are 1-hour imported Q-tables. Collaborative HSI 1H gives an external 2800.HK benchmark, while Collaborative Leverage 1H gives an external 7226.HK benchmark. Both help compare our internal 30-minute grid against independently prepared 1-hour policies.</p>
     </section>
 
     <section class="slide">
@@ -143,103 +145,111 @@
     <section class="slide">
       <div class="cue"><span class="num">9</span>Data and Configuration</div>
       <h2>Strategy behavior is declared, validated, and reproducible</h2>
-      <p>Data and configuration are intentionally explicit. Historical bars can come from CSV, Futu export, or Bloomberg export. They are normalized into Hong Kong time and validated before training.</p>
+      <p>Data and configuration are intentionally explicit. For the current research batch, the practical data sources are mainly Webull and Futu exports or downloads. Those files are saved under data/raw and normalized into Hong Kong time before training.</p>
+      <p>Bloomberg XLSX support exists in the codebase for future terminal exports, but it was not the main source for the current paper-bot fleet. I would describe it as supported infrastructure, not as the data source behind these results.</p>
       <p>The YAML files describe the asset, date range, decision times, fee, lot size, state encoder, reward, agent, and artifact paths. This makes experiments easy to review because the hypothesis is visible in the config instead of hidden inside notebook cells.</p>
     </section>
 
     <section class="slide">
-      <div class="cue"><span class="num">10</span>Plugin Registry</div>
+      <div class="cue"><span class="num">10</span>YAML Reference</div>
+      <h2>A strategy is visible in one config file</h2>
+      <p>On the YAML slide, I would explain that this is the main reason the project is easy to audit. The config shows the symbol, data file, decision times, fee model, state encoder, reward function, agent type, action count, and artifact locations.</p>
+      <p>For example, the 2800.HK broad model can be read directly from the YAML: CSV input, 30-minute decision points, 20 bps one-side fee, z-score state encoder, fee-aware reward, Q-table agent, and three actions. That is the complete strategy definition at a high level.</p>
+    </section>
+
+    <section class="slide">
+      <div class="cue"><span class="num">11</span>Plugin Registry</div>
       <h2>New strategy ideas do not require rewriting the runner</h2>
       <p>The plugin registry is a small but important design choice. It means the runner can build components by name, such as a CSV data source, a z-score state encoder, a fee-aware reward, or a Q-table agent.</p>
       <p>As a result, adding a new experiment usually means adding a plugin and a test, then selecting it in YAML. We do not need to modify the live bot for every new research idea.</p>
     </section>
 
     <section class="slide">
-      <div class="cue"><span class="num">11</span>Training Loop</div>
+      <div class="cue"><span class="num">12</span>Training Loop</div>
       <h2>How a Q-table is produced</h2>
       <p>The training runner loads historical data, groups it into valid trading days, and performs walk-forward training. Each simulated day starts with fresh cash and zero position. At every decision point, the agent chooses an action, the portfolio applies trades and fees, and the Q-table is updated.</p>
       <p>Reward timing is carefully defined: portfolio value before the trade is V_t, and portfolio value after the trade is V_t+1. This makes transaction fees appear in the reward at the correct time.</p>
     </section>
 
     <section class="slide">
-      <div class="cue"><span class="num">12</span>Live Runtime</div>
+      <div class="cue"><span class="num">13</span>Live Runtime</div>
       <h2>How one paper decision is made</h2>
       <p>In live paper mode, the bot does not train. It loads the Q-table artifact, fetches current price and broker state, builds the market context, encodes that context into a state, reads the Q-table for the current decision point, and chooses the greedy action.</p>
       <p>Then it converts that action into a target quantity using cash, price, and lot size. Finally, it patches the Quantphemes holding and writes one JSON log line with the decision details.</p>
     </section>
 
     <section class="slide">
-      <div class="cue"><span class="num">13</span>Collaborative Model Integration</div>
+      <div class="cue"><span class="num">14</span>Collaborative Model Integration</div>
       <h2>External Q-tables now run through the same code path</h2>
       <p>The collaborative Q-tables were structurally compatible with our agent: five decision points, twenty-seven states, two actions, and visit counts. I converted them into our standard QTableAgent artifact format and created production YAML files for them.</p>
       <p>While integrating them, I also fixed a live-state issue in our bot: delta_prev must use the previous decision price, not the current price. This fix benefits both our models and the collaborative imports.</p>
     </section>
 
     <section class="slide">
-      <div class="cue"><span class="num">14</span>Framework Choices</div>
+      <div class="cue"><span class="num">15</span>Framework Choices</div>
       <h2>Why these tools?</h2>
       <p>The framework choices are pragmatic. Python, NumPy, and Pandas are strong for market-data workflows. Pydantic and YAML make experiments readable and validated. Pytest and Ruff protect behavior and style. MkDocs Material gives us polished, searchable documentation.</p>
       <p>The rationale is not to use tools for their own sake. Each tool reduces a specific project risk: configuration mistakes, data mistakes, trading-rule regressions, or poor maintainability.</p>
     </section>
 
     <section class="slide">
-      <div class="cue"><span class="num">15</span>Trading Rules</div>
+      <div class="cue"><span class="num">16</span>Trading Rules</div>
       <h2>Financial assumptions are explicit and tested</h2>
       <p>The financial rules are central to the project. We use a 20 bps one-side fee, and fees are charged only when position changes. The bot respects lot size and available cash. The strategy is day-trading, so live operation targets a flat position near the close.</p>
       <p>These rules are tested because small implementation mistakes in fee timing or position sizing can completely change the strategy result.</p>
     </section>
 
     <section class="slide">
-      <div class="cue"><span class="num">16</span>Diagnostics</div>
+      <div class="cue"><span class="num">17</span>Diagnostics</div>
       <h2>We diagnose the model, not only the final NAV</h2>
       <p>The diagnostics are important because final NAV alone does not tell us why a model behaved a certain way. We inspect state coverage, oracle upper bounds, feature signal checks, action distributions, reward histograms, and fee pressure.</p>
       <p>This helps us separate different failure modes: weak features, sparse training coverage, excessive fees, or a policy that simply learned to avoid exposure.</p>
     </section>
 
     <section class="slide">
-      <div class="cue"><span class="num">17</span>Live Operations</div>
+      <div class="cue"><span class="num">18</span>Live Operations</div>
       <h2>Production-style deployment is observable and reversible</h2>
       <p>The bots run on an Azure VM using systemd services. Each bot has its own config, Q-table artifact, runtime state, and log directory. This means the system can run without keeping a laptop online.</p>
       <p>It is also reversible. If a model should be stopped or rolled back, we can stop one service, restore an older artifact, and restart only that bot.</p>
     </section>
 
     <section class="slide">
-      <div class="cue"><span class="num">18</span>Quantphemes API Integration</div>
+      <div class="cue"><span class="num">19</span>Quantphemes API Integration</div>
       <h2>Broker behavior shaped the deployment design</h2>
       <p>The API integration separates documented broker endpoints from undocumented price endpoints. Holding updates go through a tested sync helper. We also learned that price availability and tradeability are not the same: 7299.HK could be researched, but the platform rejected it for trading.</p>
       <p>For the meeting, this is a good point to ask Quantphemes about symbol whitelists, paper execution visibility, and plan-level automation constraints.</p>
     </section>
 
     <section class="slide">
-      <div class="cue"><span class="num">19</span>Quality Controls</div>
+      <div class="cue"><span class="num">20</span>Quality Controls</div>
       <h2>Trading invariants are protected by tests</h2>
       <p>The test suite covers the registry, data adapters, portfolio accounting, trading environment, reward timing, Q-table updates, baselines, config loading, report rendering, live-bot logic, runtime state, and federated merge.</p>
       <p>This matters because trading bugs are often small but expensive: a fee charged on hold, a value measured after the trade, or a default-to-cash tie rule can quietly distort the whole result.</p>
     </section>
 
     <section class="slide">
-      <div class="cue"><span class="num">20</span>Documentation</div>
+      <div class="cue"><span class="num">21</span>Documentation</div>
       <h2>The project has a public knowledge base</h2>
       <p>The project documentation is built with MkDocs Material and published through GitHub Pages. It includes architecture, data guide, experiment workflow, live runbook, API notes, research notes, and developer guidance.</p>
       <p>This makes the project easier to review and maintain. A future user should be able to understand how to run experiments or operate the bot without reverse-engineering the code.</p>
     </section>
 
     <section class="slide">
-      <div class="cue"><span class="num">21</span>Current Boundaries</div>
+      <div class="cue"><span class="num">22</span>Current Boundaries</div>
       <h2>What the report does and does not claim</h2>
       <p>The report claims that the research-to-paper pipeline is implemented, tested, documented, and capable of running multiple Q-table strategies. It does not claim that the current strategies are live-profitable.</p>
       <p>That distinction is important. The engineering system is ready for serious paper observation, while the trading edge still needs to be evaluated with live paper behavior, fees, and platform constraints.</p>
     </section>
 
     <section class="slide">
-      <div class="cue"><span class="num">22</span>Discussion Points for Quantphemes</div>
+      <div class="cue"><span class="num">23</span>Discussion Points for Quantphemes</div>
       <h2>Platform clarifications that affect paper operation</h2>
       <p>The main questions for Quantphemes are practical. Which HK ETFs are officially tradeable? How exactly should we verify that a paper PATCH produced a visible order, fill, or holding update? What are the current automation limits? And which endpoints are recommended for intraday price reads?</p>
       <p>These answers will help us make the paper deployment more reliable and easier to interpret.</p>
     </section>
 
     <section class="slide close">
-      <div class="cue"><span class="num">23</span>Closing</div>
+      <div class="cue"><span class="num">24</span>Closing</div>
       <h2>We have a working research-to-paper pipeline</h2>
       <p>The closing message is that the project is ready for a serious technical discussion. We can explain what the models do, how the system is built, how paper decisions are generated, and where Quantphemes platform behavior affects deployment.</p>
       <p>I would finish by saying that the system is ready for disciplined paper trading and collaboration, while live strategy edge remains something we will observe carefully.</p>
