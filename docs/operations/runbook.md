@@ -14,10 +14,25 @@ QUANTPHEMES_STRATEGY_ID=<strategy id>
 
 Never commit `.env`.
 
+The multi-bot paper deployment also expects one strategy/portfolio pair per bot:
+
+```bash
+STRATEGY_RL_CROSS_ID=<copy-master strategy id>
+PORTFOLIO_RL_CROSS_ID=<portfolio id>
+STRATEGY_RL_VOL_ID=<copy-master strategy id>
+PORTFOLIO_RL_VOL_ID=<portfolio id>
+STRATEGY_RL_FACOV_ID=<copy-master strategy id>
+PORTFOLIO_RL_FACOV_ID=<portfolio id>
+STRATEGY_RL_BROAD_A_ID=<copy-master strategy id>
+PORTFOLIO_RL_BROAD_A_ID=<portfolio id>
+STRATEGY_RL_BROAD_B_ID=<copy-master strategy id>
+PORTFOLIO_RL_BROAD_B_ID=<portfolio id>
+```
+
 ## Pre-Live Checklist
 
-- `artifacts/q_state.pkl` exists and came from a reviewed real-data experiment.
-- `experiments/production_2800.yaml` points to the intended symbol.
+- The relevant `artifacts/deploy/<bot>_q_state.pkl` exists and came from a reviewed real-data experiment.
+- The relevant `experiments/production_rl_*.yaml` points to the intended symbol and Q-table.
 - Dry-run produces decision logs.
 - Quantphemes strategy/portfolio are confirmed in the platform UI.
 - The bot can read cash, position, and last price.
@@ -49,6 +64,15 @@ python -m apps.bot --config experiments/production_2800.yaml
 
 Omitting `--dry-run` allows PATCH calls to Quantphemes.
 
+For the active paper deployment, `systemd` runs one command per strategy. Example:
+
+```bash
+python -m apps.bot \
+  --config experiments/production_rl_broad_a.yaml \
+  --strategy-id "$STRATEGY_RL_BROAD_A_ID" \
+  --portfolio-id "$PORTFOLIO_RL_BROAD_A_ID"
+```
+
 ## Azure VM Deployment
 
 Recommended runtime layout:
@@ -75,13 +99,25 @@ pip install -e ".[dev]"
 
 Copy `.env`, `artifacts/q_state.pkl`, and any required local data files separately. Do not commit those files.
 
-## systemd Service
+## systemd Services
 
-Service file:
+The Azure deployment runs five active services:
+
+| Service | Bot | Config | Log directory |
+|---|---|---|---|
+| `quantphemes-rl-cross` | `RL_CROSS` | `experiments/production_rl_cross.yaml` | `artifacts/logs/rl_cross/` |
+| `quantphemes-rl-vol` | `RL_VOL` | `experiments/production_rl_vol.yaml` | `artifacts/logs/rl_vol/` |
+| `quantphemes-rl-facov` | `RL_FACOV` | `experiments/production_rl_facov.yaml` | `artifacts/logs/rl_facov/` |
+| `quantphemes-rl-broad-a` | `RL_BROAD_A` | `experiments/production_rl_broad_a.yaml` | `artifacts/logs/rl_broad_a/` |
+| `quantphemes-rl-broad-b` | `RL_BROAD_B` | `experiments/production_rl_broad_b.yaml` | `artifacts/logs/rl_broad_b/` |
+
+The retired `quantphemes-rl-prime`, `quantphemes-rl-bias`, and `quantphemes-rl-fullcov` services should stay stopped because `7299.HK` is not currently tradable through Quantphemes.
+
+Template service file:
 
 ```ini
 [Unit]
-Description=Quantphemes RL Trading Bot
+Description=Quantphemes RL Paper Bot
 After=network-online.target
 Wants=network-online.target
 
@@ -90,7 +126,8 @@ Type=simple
 User=azureuser
 WorkingDirectory=/home/azureuser/Algo-Trading-RL
 Environment=PYTHONUNBUFFERED=1
-ExecStart=/home/azureuser/Algo-Trading-RL/.venv/bin/python -m apps.bot --config experiments/production_2800.yaml
+EnvironmentFile=/home/azureuser/Algo-Trading-RL/.env
+ExecStart=/home/azureuser/Algo-Trading-RL/.venv/bin/python -m apps.bot --config experiments/production_rl_broad_a.yaml --strategy-id ${STRATEGY_RL_BROAD_A_ID} --portfolio-id ${PORTFOLIO_RL_BROAD_A_ID}
 Restart=always
 RestartSec=10
 
@@ -98,28 +135,38 @@ RestartSec=10
 WantedBy=multi-user.target
 ```
 
-Enable and start:
+Check all active services:
 
 ```bash
-sudo systemctl enable --now quantphemes-bot
+sudo systemctl status \
+  quantphemes-rl-cross \
+  quantphemes-rl-vol \
+  quantphemes-rl-facov \
+  quantphemes-rl-broad-a \
+  quantphemes-rl-broad-b \
+  --no-pager
 ```
 
-Check status:
+Stop the full active set:
 
 ```bash
-sudo systemctl status quantphemes-bot --no-pager
-```
-
-Stop:
-
-```bash
-sudo systemctl stop quantphemes-bot
+sudo systemctl stop \
+  quantphemes-rl-cross \
+  quantphemes-rl-vol \
+  quantphemes-rl-facov \
+  quantphemes-rl-broad-a \
+  quantphemes-rl-broad-b
 ```
 
 Restart after code or model update:
 
 ```bash
-sudo systemctl restart quantphemes-bot
+sudo systemctl restart \
+  quantphemes-rl-cross \
+  quantphemes-rl-vol \
+  quantphemes-rl-facov \
+  quantphemes-rl-broad-a \
+  quantphemes-rl-broad-b
 ```
 
 ## Monitoring
@@ -127,14 +174,14 @@ sudo systemctl restart quantphemes-bot
 System logs:
 
 ```bash
-sudo journalctl -u quantphemes-bot -f
+sudo journalctl -u quantphemes-rl-broad-a -f
 ```
 
 Bot JSON logs:
 
 ```bash
 cd ~/Algo-Trading-RL
-tail -f artifacts/logs/bot_$(date +%F).jsonl
+tail -f artifacts/logs/rl_broad_a/bot_$(TZ=Asia/Hong_Kong date +%F).jsonl
 ```
 
 Each decision log should include timestamp, state, action, price, target quantity, current quantity, dry-run flag, and status.
@@ -144,9 +191,9 @@ Each decision log should include timestamp, state, action, price, target quantit
 To rollback a bad model:
 
 ```bash
-sudo systemctl stop quantphemes-bot
-cp artifacts/q_state_backup.pkl artifacts/q_state.pkl
-sudo systemctl start quantphemes-bot
+sudo systemctl stop quantphemes-rl-broad-a
+cp artifacts/deploy/rl_broad_a_q_state_backup.pkl artifacts/deploy/rl_broad_a_q_state.pkl
+sudo systemctl start quantphemes-rl-broad-a
 ```
 
 To rollback code:
@@ -158,3 +205,5 @@ source .venv/bin/activate
 pip install -e ".[dev]"
 sudo systemctl restart quantphemes-bot
 ```
+
+For multi-bot code rollback, restart the five active `quantphemes-rl-*` services instead of the legacy `quantphemes-bot` service.

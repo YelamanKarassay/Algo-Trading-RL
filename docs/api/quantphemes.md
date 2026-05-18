@@ -26,8 +26,10 @@ Observed symbol behavior:
 
 | Use | Symbol |
 |---|---|
-| Last-price endpoint | `2800` |
-| Trading holding PATCH | `2800.HK` |
+| Last-price endpoint | usually accepts the numeric code, for example `2800` |
+| Trading holding create/PATCH | requires the trading symbol, for example `2800.HK` |
+
+Price availability does not guarantee tradeability. Quantphemes accepted price reads for `7299`, but rejected holding creation for both `7299` and `7299.HK` with “Invalid symbols (not in tradable stock list).” The `7299` paper deployments are therefore stopped until Quantphemes whitelists that instrument or confirms a different trading symbol.
 
 ## Holding PATCH Shape
 
@@ -57,10 +59,20 @@ If PATCH succeeds but no trade appears:
 
 1. Confirm the target quantity is different from current quantity.
 2. Confirm trading symbol includes `.HK`.
-3. Wait a few seconds; paper fills may not be instant.
-4. Query orders on the master strategy id.
-5. Check whether the platform created or references a child holding strategy.
-6. Confirm account/free-plan limitations with Quantphemes if orders still do not appear.
+3. Confirm the master strategy already has a holding/copy-worker strategy. New masters need one zero-quantity `POST /holding` bootstrap before the first `PATCH`.
+4. Confirm the symbol is in the platform tradable list, not merely available from the price endpoint.
+5. Wait a few seconds; paper fills may not be instant.
+6. Query orders on the master strategy id.
+7. Confirm account/free-plan limitations with Quantphemes if orders still do not appear.
+
+## Current Tradability Notes
+
+| Symbol | Observed Status |
+|---|---|
+| `2800.HK` | Holding creation and PATCH succeeded |
+| `2828.HK` | Holding creation and PATCH succeeded |
+| `7226.HK` | Holding creation and PATCH succeeded |
+| `7299.HK` | Holding creation rejected as not tradable |
 
 ## Free-Plan Notes
 

@@ -60,6 +60,20 @@ Then run:
 python -m apps.bot --config experiments/production_2800.yaml --dry-run
 ```
 
+For the multi-bot paper deployment, promote into the named deploy artifact instead:
+
+```bash
+mkdir -p artifacts/deploy
+cp results/<chosen_run>/q_state.pkl artifacts/deploy/rl_broad_a_q_state.pkl
+python -m apps.bot \
+  --config experiments/production_rl_broad_a.yaml \
+  --strategy-id "$STRATEGY_RL_BROAD_A_ID" \
+  --portfolio-id "$PORTFOLIO_RL_BROAD_A_ID" \
+  --dry-run
+```
+
+Each production config owns its artifact and runtime state path. This avoids one bot accidentally reusing another bot’s Q-table or daily open/close state.
+
 ## Compare Multiple Runs
 
 ```bash

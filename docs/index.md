@@ -1,6 +1,6 @@
 # Quantphemes RL Knowledge Base
 
-Quantphemes RL is a Q-learning research and live-trading workflow for Hong Kong ETFs. The production path trades `2800.HK` through the Quantphemes broker API, while the lab path lets us test assets, intervals, state encoders, reward functions, and agents through YAML configuration.
+Quantphemes RL is a Q-learning research and live-trading workflow for Hong Kong ETFs. The current production-style paper deployment runs five independent Q-table strategies through the Quantphemes broker API, while the lab path lets us test assets, intervals, state encoders, reward functions, and agents through YAML configuration.
 
 This documentation is written for a mixed audience: someone should be able to understand the project goal in a few minutes, then keep reading into the engineering and operational details when needed.
 
@@ -35,8 +35,22 @@ The same core abstractions drive both offline experiments and live execution. La
 | Learning core | Q-table agent, baseline agents, plugin registry |
 | Diagnostics | Coverage, oracle, signal checks, HTML report |
 | Experiment runner | YAML-driven walk-forward training |
-| Live bot | Azure/systemd-ready, dry-run and live modes |
+| Live bot | Azure/systemd paper deployment with five active services |
 | Federation | Visit-weighted Q-table merge |
+
+## Active Paper Deployment
+
+As of the current stable deployment, Azure runs five paper-trading bots. Each bot has its own Quantphemes portfolio/strategy IDs in `.env`, its own `production_rl_*.yaml`, its own Q-table artifact, and its own JSON log directory.
+
+| Bot | Asset | Experiment Config | Status |
+|---|---|---|---|
+| `RL_CROSS` | `7226.HK` | `research_7226_30m_drawdown_penalty_three_feature_binary` | Active |
+| `RL_VOL` | `7226.HK` | `research_7226_30m_drawdown_penalty_with_volatility_binary` | Active |
+| `RL_FACOV` | `7226.HK` | `research_7226_30m_fee_aware_zscore_bins_ternary` | Active, watch fees |
+| `RL_BROAD_A` | `2800.HK` | `research_2800_30m_fee_aware_zscore_bins_ternary` | Active |
+| `RL_BROAD_B` | `2828.HK` | `research_2828_30m_log_return_with_volatility_ternary` | Active |
+
+The older `RL_PRIME`, `RL_BIAS`, and `RL_FULLCOV` deployments were halted because Quantphemes rejected `7299.HK` as outside the tradable symbol list.
 
 ## Where To Go Next
 
