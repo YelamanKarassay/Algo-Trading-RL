@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quantphemes RL Trading Bot - Meeting Report</title>
+  <style>
+    :root {
+      --bg: #f6f7f4;
+      --ink: #17201d;
+      --muted: #617069;
+      --line: #d9dfd6;
+      --panel: #ffffff;
+      --panel-2: #eef3ee;
+      --green: #16704a;
+      --mint: #bce6d1;
+      --blue: #2e5eaa;
+      --amber: #b66b18;
+      --rose: #b54545;
+      --shadow: 0 18px 45px rgba(25, 35, 31, .10);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.55;
+    }
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .shell { max-width: 1180px; margin: 0 auto; padding: 32px 24px 72px; }
+    .hero {
+      min-height: 520px;
+      display: grid;
+      align-items: end;
+      padding: 54px;
+      color: #f8fff8;
+      background:
+        linear-gradient(90deg, rgba(10, 31, 23, .94), rgba(10, 31, 23, .58)),
+        url("https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1800&q=80");
+      background-size: cover;
+      background-position: center;
+      border-bottom: 1px solid rgba(255,255,255,.15);
+    }
+    .hero-inner { max-width: 1100px; margin: 0 auto; width: 100%; }
+    .eyebrow { letter-spacing: .16em; text-transform: uppercase; font-size: 12px; font-weight: 800; color: var(--mint); }
+    h1, h2, h3 { line-height: 1.08; margin: 0 0 14px; letter-spacing: 0; }
+    h1 { font-size: clamp(42px, 7vw, 92px); max-width: 920px; }
+    h2 { font-size: clamp(28px, 4vw, 46px); margin-top: 52px; }
+    h3 { font-size: 22px; margin-top: 26px; }
+    .lead { max-width: 820px; font-size: 20px; color: #dfeee6; }
+    .meta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 7px 12px;
+      border: 1px solid rgba(255,255,255,.22);
+      background: rgba(255,255,255,.10);
+      border-radius: 999px;
+      color: #effaf3;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    nav.toc {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: rgba(246,247,244,.92);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--line);
+    }
+    nav.toc .shell { padding-top: 12px; padding-bottom: 12px; }
+    nav.toc a { margin-right: 18px; color: var(--muted); font-weight: 700; font-size: 14px; }
+    .grid { display: grid; gap: 18px; }
+    .grid.kpi { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 26px; }
+    .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+    }
+    .kpi .card { min-height: 130px; }
+    .metric { font-size: 34px; font-weight: 850; margin-top: 4px; }
+    .label { color: var(--muted); font-size: 13px; font-weight: 750; text-transform: uppercase; letter-spacing: .08em; }
+    .note { color: var(--muted); font-size: 14px; }
+    table { width: 100%; border-collapse: collapse; margin: 18px 0 28px; background: var(--panel); border: 1px solid var(--line); }
+    th, td { padding: 12px 13px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; font-size: 14px; }
+    th { background: var(--panel-2); color: #26332f; font-size: 12px; text-transform: uppercase; letter-spacing: .07em; }
+    tr:last-child td { border-bottom: 0; }
+    .status {
+      display: inline-flex;
+      padding: 4px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .run { background: #dff4e8; color: #075d3a; }
+    .ready { background: #e7edff; color: #244a9c; }
+    .halt { background: #f7e3dd; color: #8f321f; }
+    .warn { background: #fff0d4; color: #8a4a05; }
+    .figure {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+      margin: 20px 0;
+      overflow-x: auto;
+    }
+    .caption { color: var(--muted); font-size: 13px; margin-top: 8px; }
+    .bars { display: grid; gap: 12px; margin: 16px 0 4px; }
+    .bar-row { display: grid; grid-template-columns: 150px 1fr 92px; gap: 12px; align-items: center; font-size: 14px; }
+    .track { height: 18px; background: #e7ebe6; border-radius: 99px; overflow: hidden; }
+    .fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--green), #5dbd86); }
+    .fill.blue { background: linear-gradient(90deg, #315ca8, #7aa5e6); }
+    .fill.amber { background: linear-gradient(90deg, #b66b18, #e7b75d); }
+    .callout {
+      border-left: 5px solid var(--green);
+      background: #eff8f2;
+      padding: 18px 20px;
+      margin: 24px 0;
+      border-radius: 8px;
+    }
+    code { background: #e9eee9; padding: 2px 5px; border-radius: 5px; }
+    ul { padding-left: 22px; }
+    .footer { margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+    @media (max-width: 860px) {
+      .hero { padding: 34px 22px; min-height: 560px; }
+      .grid.kpi, .grid.two, .grid.three { grid-template-columns: 1fr; }
+      nav.toc { position: static; }
+      .bar-row { grid-template-columns: 1fr; }
+    }
+    @media print {
+      nav.toc { display: none; }
+      .hero { min-height: 360px; }
+      .card, .figure { box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="eyebrow">Quantphemes Meeting Report</div>
+      <h1>Q-Learning Paper-Trading Fleet for Hong Kong ETFs</h1>
+      <p class="lead">A reproducible research-to-live workflow for training, evaluating, diagnosing, and deploying tabular reinforcement-learning strategies through the Quantphemes broker API.</p>
+      <div class="meta">
+        <span class="chip">Python 3.11+</span>
+        <span class="chip">Q-table RL</span>
+        <span class="chip">HK ETFs</span>
+        <span class="chip">YAML-driven experiments</span>
+        <span class="chip">Azure + systemd deployment</span>
+      </div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="shell">
+      <a href="#summary">Summary</a>
+      <a href="#bots">Bots</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#research">Research</a>
+      <a href="#operations">Operations</a>
+      <a href="#next">Next Steps</a>
+    </div>
+  </nav>
+
+  <main class="shell">
+    <section id="summary">
+      <h2>Executive Summary</h2>
+      <p>Quantphemes RL is a compact but complete trading research platform. It starts from historical ETF data, trains tabular Q-learning agents under a strict fee and lot-size model, produces diagnostics and HTML reports, then deploys selected Q-tables to paper trading without retraining in production.</p>
+      <div class="grid kpi">
+        <div class="card"><div class="label">Paper bot fleet</div><div class="metric">7</div><div class="note">Five selected bots plus two imported groupmate 1-hour bots integrated into the same live path.</div></div>
+        <div class="card"><div class="label">Active assets</div><div class="metric">3</div><div class="note">2800.HK, 2828.HK, and 7226.HK. 7299.HK was halted after broker rejection.</div></div>
+        <div class="card"><div class="label">Experiment space</div><div class="metric">125+</div><div class="note">Asset, reward, encoder, and action-space combinations tested in the 30-minute research grid.</div></div>
+        <div class="card"><div class="label">Core invariant</div><div class="metric">20 bps</div><div class="note">One-side fee, charged only on position changes and mirrored in training, oracle, and live sizing.</div></div>
+      </div>
+      <div class="callout">
+        <strong>Meeting message:</strong> the project is not just a bot script. It is a reproducible system: data adapters, experiment configs, plugin registry, trading environment, diagnostics, live execution, documentation, and deployment operations are all under version control.
+      </div>
+      <p>
+        GitHub repository: <a href="https://github.com/YelamanKarassay/Algo-Trading-RL">github.com/YelamanKarassay/Algo-Trading-RL</a><br />
+        Documentation portal: <a href="https://yelamankarassay.github.io/Algo-Trading-RL/">yelamankarassay.github.io/Algo-Trading-RL/</a>
+      </p>
+    </section>
+
+    <section id="bots">
+      <h2>Paper-Trading Bot Portfolio</h2>
+      <p>The deployed portfolio is intentionally diversified across assets, reward functions, encoders, and action spaces. This lets us observe whether behavior changes are caused by the model family, asset microstructure, state representation, or reward shaping.</p>
+      <table>
+        <thead>
+          <tr><th>Bot</th><th>Asset</th><th>Reward / Encoder</th><th>Actions</th><th>Backtest Alpha vs B&amp;H</th><th>Trades</th><th>Fees</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>RL_CROSS</strong></td><td>7226.HK</td><td>drawdown_penalty / three_feature</td><td>cash/full</td><td>+2.56%</td><td>30</td><td>HKD 59,795</td><td><span class="status run">paper running</span></td></tr>
+          <tr><td><strong>RL_VOL</strong></td><td>7226.HK</td><td>drawdown_penalty / with_volatility</td><td>cash/full</td><td>+2.56%</td><td>42</td><td>HKD 83,814</td><td><span class="status run">paper running</span></td></tr>
+          <tr><td><strong>RL_FACOV</strong></td><td>7226.HK</td><td>fee_aware / zscore_bins</td><td>cash/half/full</td><td>+2.56%</td><td>96</td><td>HKD 125,729</td><td><span class="status warn">watch fees</span></td></tr>
+          <tr><td><strong>RL_BROAD_A</strong></td><td>2800.HK</td><td>fee_aware / zscore_bins</td><td>cash/half/full</td><td>+1.29%</td><td>10</td><td>HKD 9,902</td><td><span class="status run">paper running</span></td></tr>
+          <tr><td><strong>RL_BROAD_B</strong></td><td>2828.HK</td><td>log_return / with_volatility</td><td>cash/half/full</td><td>+1.30%</td><td>18</td><td>HKD 19,263</td><td><span class="status run">paper running</span></td></tr>
+          <tr><td><strong>GROUPMATE_2800_1H</strong></td><td>2800.HK</td><td>QP-spec thresholds / three_feature</td><td>cash/full</td><td>imported artifact</td><td>n/a</td><td>n/a</td><td><span class="status ready">integrated</span></td></tr>
+          <tr><td><strong>GROUPMATE_7226_1H</strong></td><td>7226.HK</td><td>QP-spec thresholds / three_feature</td><td>cash/full</td><td>imported artifact</td><td>n/a</td><td>n/a</td><td><span class="status ready">integrated</span></td></tr>
+        </tbody>
+      </table>
+
+      <div class="grid two">
+        <div class="figure">
+          <h3>Backtest Alpha vs Buy-and-Hold</h3>
+          <div class="bars">
+            <div class="bar-row"><strong>RL_CROSS</strong><div class="track"><div class="fill" style="width: 100%"></div></div><span>+2.56%</span></div>
+            <div class="bar-row"><strong>RL_VOL</strong><div class="track"><div class="fill" style="width: 100%"></div></div><span>+2.56%</span></div>
+            <div class="bar-row"><strong>RL_FACOV</strong><div class="track"><div class="fill amber" style="width: 100%"></div></div><span>+2.56%</span></div>
+            <div class="bar-row"><strong>RL_BROAD_A</strong><div class="track"><div class="fill blue" style="width: 51%"></div></div><span>+1.29%</span></div>
+            <div class="bar-row"><strong>RL_BROAD_B</strong><div class="track"><div class="fill blue" style="width: 51%"></div></div><span>+1.30%</span></div>
+          </div>
+          <div class="caption">Backtests use the same fee model as the live bot. These are research diagnostics, not profitability guarantees.</div>
+        </div>
+        <div class="figure">
+          <h3>Trade Count and Fee Pressure</h3>
+          <div class="bars">
+            <div class="bar-row"><strong>RL_CROSS</strong><div class="track"><div class="fill" style="width: 31%"></div></div><span>30 trades</span></div>
+            <div class="bar-row"><strong>RL_VOL</strong><div class="track"><div class="fill" style="width: 44%"></div></div><span>42 trades</span></div>
+            <div class="bar-row"><strong>RL_FACOV</strong><div class="track"><div class="fill amber" style="width: 100%"></div></div><span>96 trades</span></div>
+            <div class="bar-row"><strong>RL_BROAD_A</strong><div class="track"><div class="fill blue" style="width: 10%"></div></div><span>10 trades</span></div>
+            <div class="bar-row"><strong>RL_BROAD_B</strong><div class="track"><div class="fill blue" style="width: 19%"></div></div><span>18 trades</span></div>
+          </div>
+          <div class="caption">RL_FACOV is deliberately monitored because the fee-aware ternary policy still traded more frequently in backtest.</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="architecture">
+      <h2>System Architecture</h2>
+      <p>The project uses a shared core for both lab experiments and production trading. The live bot does not duplicate learning logic; it loads the same agent artifact created by the experiment runner and calls <code>Agent.act(state, training=False)</code>.</p>
+      <div class="figure">
+        <svg viewBox="0 0 1080 420" role="img" aria-label="System architecture diagram">
+          <defs>
+            <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#496158"/></marker>
+            <style>
+              .box{fill:#fff;stroke:#cfd8d0;stroke-width:2;rx:12}
+              .soft{fill:#eef6f0;stroke:#b7d4bf;stroke-width:2;rx:12}
+              .live{fill:#eef3ff;stroke:#aebfe8;stroke-width:2;rx:12}
+              .txt{font:700 18px Inter,Arial;fill:#17201d}
+              .sub{font:500 13px Inter,Arial;fill:#617069}
+              .line{stroke:#496158;stroke-width:2.4;fill:none;marker-end:url(#arrow)}
+            </style>
+          </defs>
+          <rect class="soft" x="30" y="38" width="190" height="92" />
+          <text class="txt" x="58" y="75">YAML Configs</text>
+          <text class="sub" x="58" y="101">assets, rewards, encoders</text>
+          <rect class="box" x="280" y="38" width="205" height="92" />
+          <text class="txt" x="310" y="75">Pydantic Loader</text>
+          <text class="sub" x="310" y="101">validation + inheritance</text>
+          <rect class="box" x="545" y="38" width="205" height="92" />
+          <text class="txt" x="576" y="75">Plugin Registry</text>
+          <text class="sub" x="576" y="101">data, state, reward, agent</text>
+          <rect class="box" x="810" y="38" width="220" height="92" />
+          <text class="txt" x="840" y="75">Core RL Engine</text>
+          <text class="sub" x="840" y="101">env + portfolio + q-table</text>
+          <path class="line" d="M220 84 H280" /><path class="line" d="M485 84 H545" /><path class="line" d="M750 84 H810" />
+          <rect class="soft" x="120" y="225" width="230" height="98" />
+          <text class="txt" x="151" y="262">Research Runner</text>
+          <text class="sub" x="151" y="289">walk-forward training</text>
+          <rect class="soft" x="425" y="225" width="230" height="98" />
+          <text class="txt" x="459" y="262">Diagnostics</text>
+          <text class="sub" x="459" y="289">metrics, coverage, report</text>
+          <rect class="live" x="730" y="225" width="230" height="98" />
+          <text class="txt" x="765" y="262">Live Bot</text>
+          <text class="sub" x="765" y="289">Quantphemes paper API</text>
+          <path class="line" d="M920 130 C920 170 845 182 845 225" />
+          <path class="line" d="M910 130 C825 175 615 174 540 225" />
+          <path class="line" d="M905 130 C760 178 330 174 235 225" />
+          <rect class="box" x="275" y="350" width="220" height="48" />
+          <text class="sub" x="301" y="380">q_state.pkl + report.html</text>
+          <path class="line" d="M350 274 H425" /><path class="line" d="M655 274 H730" />
+        </svg>
+        <div class="caption">One architecture supports both research and production. This reduces drift between backtest logic and live behavior.</div>
+      </div>
+
+      <div class="grid three">
+        <div class="card"><h3>Why Pydantic + YAML?</h3><p>YAML makes experiments readable and reviewable. Pydantic validates types, defaults, and inheritance so production can be configured without hidden code edits.</p></div>
+        <div class="card"><h3>Why a Plugin Registry?</h3><p>New data sources, state encoders, reward functions, and agents can be added without modifying the experiment runner or live bot control flow.</p></div>
+        <div class="card"><h3>Why Tabular Q-learning?</h3><p>The current state/action space is small enough for direct inspection. This makes early model behavior explainable before moving toward DQN or richer models.</p></div>
+      </div>
+
+      <h3>Module Responsibilities</h3>
+      <table>
+        <thead><tr><th>Module</th><th>Purpose</th><th>Rationale</th></tr></thead>
+        <tbody>
+          <tr><td><code>data/</code></td><td>Normalizes CSV, Futu, and Bloomberg exports into HK-time bars.</td><td>Separates vendor formats from the RL environment.</td></tr>
+          <tr><td><code>state/</code></td><td>Encodes market context into finite discrete state IDs.</td><td>Preserves explainability and lets features be compared by plugin.</td></tr>
+          <tr><td><code>reward/</code></td><td>Converts NAV changes into learning signal.</td><td>Allows log-return, fee-aware, drawdown, and bias experiments.</td></tr>
+          <tr><td><code>agent/</code></td><td>Implements Q-table, baselines, persistence, and visit counts.</td><td>One artifact format supports training, diagnostics, federation, and live use.</td></tr>
+          <tr><td><code>portfolio/</code></td><td>Enforces cash, shares, fee, and lot-size accounting.</td><td>Ensures training and live sizing use the same financial constraints.</td></tr>
+          <tr><td><code>env/</code></td><td>Runs one trading day step-by-step.</td><td>Keeps reward timing and force-close fee handling testable.</td></tr>
+          <tr><td><code>diagnostics/</code></td><td>Builds coverage, oracle, signal, and HTML reports.</td><td>Explains why a model behaves as it does, not only what the NAV was.</td></tr>
+          <tr><td><code>apps/</code></td><td>CLI entry points for experiment, comparison, federation, and live bot.</td><td>Keeps executable workflows thin and auditable.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="research">
+      <h2>Research Methodology</h2>
+      <p>The research grid compares assets, reward functions, state encoders, and action spaces under the same transaction-cost model. This gives us a controlled way to decide which behaviors are worth deploying to paper trading.</p>
+      <div class="grid two">
+        <div class="card">
+          <h3>Model Family</h3>
+          <ul>
+            <li>One Q-table per decision point.</li>
+            <li>Binary actions: cash or full position.</li>
+            <li>Ternary actions: cash, half, or full position.</li>
+            <li>Random tie-breaks to avoid a hidden cash bias.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Experiment Controls</h3>
+          <ul>
+            <li>Starting capital: HKD 1,000,000.</li>
+            <li>One-side fee: 20 bps.</li>
+            <li>Fresh portfolio each simulated day.</li>
+            <li>Flat by end-of-day in live operation.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="figure">
+        <svg viewBox="0 0 1080 250" role="img" aria-label="Experiment workflow">
+          <style>
+            .step{fill:#fff;stroke:#d3dad2;stroke-width:2;rx:12}
+            .slabel{font:800 18px Inter,Arial;fill:#17201d}
+            .ssub{font:500 13px Inter,Arial;fill:#617069}
+            .arr{stroke:#496158;stroke-width:2.4;fill:none;marker-end:url(#arrow)}
+          </style>
+          <rect class="step" x="30" y="70" width="160" height="90" />
+          <text class="slabel" x="58" y="105">Raw Data</text><text class="ssub" x="58" y="132">CSV / XLSX</text>
+          <rect class="step" x="245" y="70" width="160" height="90" />
+          <text class="slabel" x="270" y="105">DayData</text><text class="ssub" x="270" y="132">HK bars</text>
+          <rect class="step" x="460" y="70" width="160" height="90" />
+          <text class="slabel" x="486" y="105">Train</text><text class="ssub" x="486" y="132">Q updates</text>
+          <rect class="step" x="675" y="70" width="160" height="90" />
+          <text class="slabel" x="704" y="105">Evaluate</text><text class="ssub" x="704" y="132">greedy policy</text>
+          <rect class="step" x="890" y="70" width="160" height="90" />
+          <text class="slabel" x="918" y="105">Promote</text><text class="ssub" x="918" y="132">q_state.pkl</text>
+          <path class="arr" d="M190 115 H245" /><path class="arr" d="M405 115 H460" /><path class="arr" d="M620 115 H675" /><path class="arr" d="M835 115 H890" />
+        </svg>
+      </div>
+
+      <h3>Why the Current Five Were Selected</h3>
+      <p>The selected paper set is a monitoring portfolio rather than a final production claim. It includes broad ETF candidates with lower fee load, leveraged ETF candidates with more movement, and feature variants that allow us to observe live sensitivity to volatility and z-score regimes.</p>
+    </section>
+
+    <section id="operations">
+      <h2>Live Operations</h2>
+      <p>Production-style paper trading runs on Azure using <code>systemd</code>. Each bot has a separate service, config, Q-table artifact, runtime state file, and JSONL log directory. Secrets are loaded from server-side environment variables and never committed to Git.</p>
+      <div class="grid three">
+        <div class="card"><h3>Safety</h3><p>Dry-run mode is available for testing. Live mode only patches broker holdings when dry-run is omitted and strategy/portfolio IDs are present.</p></div>
+        <div class="card"><h3>Monitoring</h3><p>Every decision emits structured JSON with timestamp, state tuple, action, price, target quantity, current quantity, and status.</p></div>
+        <div class="card"><h3>Rollback</h3><p>Services can be stopped independently; Q-table artifacts can be restored from prior promoted files without changing source code.</p></div>
+      </div>
+      <h3>Known Platform Notes</h3>
+      <ul>
+        <li><code>7299.HK</code> was rejected by the broker as not in the tradable stock list, so related bots were halted.</li>
+        <li>Price reads may succeed for a symbol even when trade PATCHes are rejected. Tradeability must be verified separately.</li>
+        <li>Live bot force-close behavior explicitly targets zero quantity near market close; the broker still determines actual execution and paper-trade visibility.</li>
+      </ul>
+    </section>
+
+    <section id="documentation">
+      <h2>Documentation and Engineering Discipline</h2>
+      <p>The project includes a MkDocs Material knowledge base with architecture, data guide, experiment workflow, live runbook, API integration notes, research notes, and developer guide. This is designed for mixed readers: Quantphemes reviewers, teammates, supervisors, and future maintainers.</p>
+      <table>
+        <thead><tr><th>Document Area</th><th>What It Explains</th></tr></thead>
+        <tbody>
+          <tr><td>Architecture</td><td>How configs, plugins, environments, agents, diagnostics, and live execution fit together.</td></tr>
+          <tr><td>Data Guide</td><td>Required fields, Bloomberg/Futu/CSV formats, HK lunch break, 16:00 close, and timezone pitfalls.</td></tr>
+          <tr><td>Runbook</td><td>Environment variables, dry-run/live commands, Azure deployment, systemd monitoring, rollback.</td></tr>
+          <tr><td>Developer Guide</td><td>How to add plugins and tests without breaking the registry or production path.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="next">
+      <h2>Limitations and Next Steps</h2>
+      <div class="grid two">
+        <div class="card">
+          <h3>Current Limitations</h3>
+          <ul>
+            <li>Tabular models are explainable but limited; they cannot learn richer nonlinear patterns.</li>
+            <li>Intraday ETF edges are small relative to the 40 bps round-trip cost.</li>
+            <li>Paper execution depends on Quantphemes symbol whitelist and platform plan constraints.</li>
+            <li>Backtest alpha versus buy-and-hold should be validated over more market regimes.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Proposed Next Work</h3>
+          <ul>
+            <li>Run M5 and M15 research variants for higher-resolution decision points.</li>
+            <li>Add live fee-ratio alerts, especially for high-turnover 7226.HK strategies.</li>
+            <li>Expand diagnostics to compare live paper decisions against offline expectations.</li>
+            <li>Prototype a DQN plugin only after tabular baselines remain stable in paper trading.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer">
+      Prepared for Quantphemes discussion. Generated from repository state and local experiment outputs. No API keys, portfolio IDs, or private credentials are included.
+    </div>
+  </main>
+</body>
+</html>

@@ -63,5 +63,7 @@ nav:
       - Quantphemes API: api/quantphemes.md
   - Research Notes:
       - Model Notes: research/index.md
+  - Meeting Materials:
+      - Quantphemes Report: meeting/index.md
   - Developer Guide:
       - Extending The Project: developer/index.md

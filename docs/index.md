@@ -70,6 +70,10 @@ The older `RL_PRIME`, `RL_BIAS`, and `RL_FULLCOV` deployments were halted becaus
 
     Follow the [Live Trading Runbook](operations/runbook.md) before touching live mode.
 
+-   **Meeting materials**
+
+    Open the [Quantphemes meeting report and presentation](meeting/index.md).
+
 -   **Extending the system**
 
     Read the [Developer Guide](developer/index.md) for plugin and testing rules.
