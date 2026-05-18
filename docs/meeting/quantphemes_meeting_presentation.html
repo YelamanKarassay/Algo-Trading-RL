@@ -215,6 +215,74 @@
 
     <section class="slide">
       <span class="num">06</span>
+      <div class="eyebrow">Data and Configuration</div>
+      <h2>Strategy behavior is declared, validated, and reproducible</h2>
+      <div class="grid two">
+        <div class="card"><h3>Data adapters</h3><p>CSV, Futu CSV, and Bloomberg XLSX are normalized into timezone-aware Hong Kong bars and grouped into trading days.</p></div>
+        <div class="card"><h3>YAML configs</h3><p>Asset, date range, fee, decision times, encoder, reward, agent, and artifacts are visible in one file.</p></div>
+        <div class="card"><h3>Pydantic validation</h3><p>Bad config or malformed data fails early instead of silently entering training or live execution.</p></div>
+        <div class="card"><h3>Inheritance</h3><p>Experiments inherit baseline assumptions and override only the hypothesis-specific fields.</p></div>
+      </div>
+      <div class="notes"><strong>Speaker notes</strong><p>Explain that this is one of the biggest engineering wins. The model is not hidden in a notebook. A reviewer can open a YAML file and see what changed.</p></div>
+    </section>
+
+    <section class="slide">
+      <span class="num">07</span>
+      <div class="eyebrow">Plugin Registry</div>
+      <h2>New strategy ideas do not require rewriting the runner</h2>
+      <div class="grid four">
+        <div class="card"><h3>Data</h3><p><code>csv</code>, <code>futu</code>, <code>bloomberg</code></p></div>
+        <div class="card"><h3>State</h3><p><code>three_feature</code>, <code>zscore_bins</code>, <code>with_volatility</code>, <code>with_rsi</code></p></div>
+        <div class="card"><h3>Reward</h3><p><code>log_return</code>, <code>fee_aware</code>, <code>drawdown_penalty</code></p></div>
+        <div class="card"><h3>Agent</h3><p><code>qtable</code>, baselines, and future model plugins.</p></div>
+      </div>
+      <p>The runner asks the registry to build the selected components. This keeps the production path consistent as the research space grows.</p>
+      <div class="notes"><strong>Speaker notes</strong><p>Use this to show Quantphemes that our architecture is modular. Adding a new encoder or reward is controlled and testable.</p></div>
+    </section>
+
+    <section class="slide">
+      <span class="num">08</span>
+      <div class="eyebrow">Training Loop</div>
+      <h2>How a Q-table is produced</h2>
+      <div class="grid two">
+        <div class="card"><h3>Walk-forward training</h3><p>Historical days are split into training and test windows. Each training episode shuffles days and starts each day with a fresh portfolio.</p></div>
+        <div class="card"><h3>Decision steps</h3><p>At each decision time, the environment measures NAV before trade, executes action, applies fees, advances time, and computes reward.</p></div>
+        <div class="card"><h3>Q update</h3><p>The agent updates one cell: decision point, state, action. Visit counts determine the per-cell learning rate.</p></div>
+        <div class="card"><h3>Artifact output</h3><p>The selected result folder contains <code>q_state.pkl</code>, config snapshot, metrics, logs, and HTML diagnostics.</p></div>
+      </div>
+      <div class="notes"><strong>Speaker notes</strong><p>Stress the fee timing rule. NAV before action and NAV after action are measured carefully so fees are penalized correctly.</p></div>
+    </section>
+
+    <section class="slide">
+      <span class="num">09</span>
+      <div class="eyebrow">Live Runtime</div>
+      <h2>How one paper decision is made</h2>
+      <ol>
+        <li>Fetch current price and broker cash/quantity.</li>
+        <li>Build market context: current price, open, previous close, previous decision price.</li>
+        <li>Encode context into a discrete state.</li>
+        <li>Read the Q-table row for this decision point and choose the greedy action.</li>
+        <li>Convert action into target quantity using lot size and available cash.</li>
+        <li>Patch Quantphemes holding and write one structured JSON log line.</li>
+      </ol>
+      <div class="notes"><strong>Speaker notes</strong><p>This is a useful slide for explaining live behavior. Every trade can be traced through these six steps.</p></div>
+    </section>
+
+    <section class="slide">
+      <span class="num">10</span>
+      <div class="eyebrow">Groupmate Integration</div>
+      <h2>External Q-tables now run through the same code path</h2>
+      <div class="grid two">
+        <div class="card"><h3>Compatibility</h3><p>Both groupmate tables are <code>5 × 27 × 2</code> with visit counts and the same three-feature threshold structure.</p></div>
+        <div class="card"><h3>Conversion</h3><p>Their standalone pickle files were converted into our standard <code>QTableAgent.save</code> artifact format.</p></div>
+        <div class="card"><h3>Production configs</h3><p>Two YAMLs define asset, decision times, thresholds, artifact paths, and runtime log locations.</p></div>
+        <div class="card"><h3>Bug fix</h3><p>The live bot now uses previous decision price for <code>delta_prev</code>, not the current price.</p></div>
+      </div>
+      <div class="notes"><strong>Speaker notes</strong><p>Make clear that this fix was in our live execution path and benefits all three-feature Q-tables.</p></div>
+    </section>
+
+    <section class="slide">
+      <span class="num">11</span>
       <div class="eyebrow">Framework Choices</div>
       <h2>Why these tools?</h2>
       <div class="grid two small">
@@ -227,7 +295,7 @@
     </section>
 
     <section class="slide">
-      <span class="num">07</span>
+      <span class="num">12</span>
       <div class="eyebrow">Trading Rules</div>
       <h2>Financial assumptions are explicit and tested</h2>
       <div class="grid three">
@@ -239,7 +307,7 @@
     </section>
 
     <section class="slide">
-      <span class="num">08</span>
+      <span class="num">13</span>
       <div class="eyebrow">Diagnostics</div>
       <h2>We diagnose the model, not only the final NAV</h2>
       <div class="grid three">
@@ -251,7 +319,7 @@
     </section>
 
     <section class="slide">
-      <span class="num">09</span>
+      <span class="num">14</span>
       <div class="eyebrow">Live Operations</div>
       <h2>Production-style deployment is observable and reversible</h2>
       <div class="grid two">
@@ -264,7 +332,7 @@
     </section>
 
     <section class="slide">
-      <span class="num">10</span>
+      <span class="num">15</span>
       <div class="eyebrow">Quantphemes API Integration</div>
       <h2>Broker behavior shaped the deployment design</h2>
       <ul>
@@ -277,7 +345,20 @@
     </section>
 
     <section class="slide">
-      <span class="num">11</span>
+      <span class="num">16</span>
+      <div class="eyebrow">Quality Controls</div>
+      <h2>Trading invariants are protected by tests</h2>
+      <div class="grid two">
+        <div class="card"><h3>Core tests</h3><p>Portfolio fees, environment reward timing, force-close behavior, Q-table updates, baselines, and registry loading.</p></div>
+        <div class="card"><h3>Live bot tests</h3><p>Target quantity sizing, dry-run safety, heartbeat behavior, runtime state recovery, and previous decision price state.</p></div>
+        <div class="card"><h3>Experiment tests</h3><p>Config inheritance, end-to-end smoke run, report rendering, oracle, signal diagnostics, and comparison tool.</p></div>
+        <div class="card"><h3>CI gates</h3><p><code>ruff check .</code>, <code>pytest -q</code>, and <code>mkdocs build --strict</code>.</p></div>
+      </div>
+      <div class="notes"><strong>Speaker notes</strong><p>Explain that the most dangerous bugs in trading systems are tiny timing and accounting errors. We explicitly test those cases.</p></div>
+    </section>
+
+    <section class="slide">
+      <span class="num">17</span>
       <div class="eyebrow">Documentation</div>
       <h2>The project has a public knowledge base</h2>
       <div class="grid two">
@@ -289,9 +370,21 @@
     </section>
 
     <section class="slide">
-      <span class="num">12</span>
-      <div class="eyebrow">Next Questions for Quantphemes</div>
-      <h2>Where partnership feedback helps most</h2>
+      <span class="num">18</span>
+      <div class="eyebrow">Current Boundaries</div>
+      <h2>What the report does and does not claim</h2>
+      <div class="grid two">
+        <div class="card"><h3>It claims</h3><p>The research-to-paper pipeline is implemented, tested, documented, and able to run multiple Q-table strategies.</p></div>
+        <div class="card"><h3>It does not claim</h3><p>The current paper strategies are production-profitable. Live observation and broker behavior still matter.</p></div>
+      </div>
+      <p>Backtests include fees, but they should be read as candidate filters and diagnostics, not final investment evidence.</p>
+      <div class="notes"><strong>Speaker notes</strong><p>This slide helps keep the meeting credible. We are confident about engineering readiness, careful about strategy claims.</p></div>
+    </section>
+
+    <section class="slide">
+      <span class="num">19</span>
+      <div class="eyebrow">Discussion Points for Quantphemes</div>
+      <h2>Platform clarifications that affect paper operation</h2>
       <ul>
         <li>Which HK ETFs are tradeable through paper and live broker routes?</li>
         <li>How should we verify that a paper PATCH produced a visible order or holding change?</li>
@@ -302,11 +395,11 @@
     </section>
 
     <section class="slide">
-      <span class="num">13</span>
+      <span class="num">20</span>
       <div class="eyebrow">Closing</div>
       <h2>We have a working research-to-paper pipeline</h2>
-      <p class="lead">The next milestone is not simply adding more models. It is validating live paper behavior, monitoring fees, expanding clean data coverage, and using Quantphemes platform feedback to harden execution.</p>
-      <div class="notes"><strong>Speaker notes</strong><p>Close with confidence but avoid overclaiming. The system is ready for disciplined paper trading and collaboration, while the strategy edge still needs live observation.</p></div>
+      <p class="lead">The project is ready for a serious technical discussion: what the models do, how the system is built, how paper decisions are generated, and where Quantphemes platform behavior shapes deployment.</p>
+      <div class="notes"><strong>Speaker notes</strong><p>Close with confidence but avoid overclaiming. The system is ready for disciplined paper trading and collaboration, while live strategy edge remains something to observe carefully.</p></div>
     </section>
   </main>
 </body>

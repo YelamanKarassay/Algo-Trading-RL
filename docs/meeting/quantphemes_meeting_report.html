@@ -165,9 +165,11 @@
       <a href="#summary">Summary</a>
       <a href="#bots">Bots</a>
       <a href="#architecture">Architecture</a>
+      <a href="#data-config">Data & Config</a>
+      <a href="#training">Training</a>
       <a href="#research">Research</a>
       <a href="#operations">Operations</a>
-      <a href="#next">Next Steps</a>
+      <a href="#quality">Quality</a>
     </div>
   </nav>
 
@@ -188,6 +190,16 @@
         GitHub repository: <a href="https://github.com/YelamanKarassay/Algo-Trading-RL">github.com/YelamanKarassay/Algo-Trading-RL</a><br />
         Documentation portal: <a href="https://yelamankarassay.github.io/Algo-Trading-RL/">yelamankarassay.github.io/Algo-Trading-RL/</a>
       </p>
+
+      <h3>Project Boundary</h3>
+      <p>The project is currently a paper-trading and research system. Its main value is the repeatable pipeline: the same definitions of data, state, reward, action, fees, portfolio accounting, and model artifacts are used from historical training through live paper execution. This makes it easier to discuss results with Quantphemes because every live action can be traced back to a configuration, a Q-table file, and a logged state tuple.</p>
+
+      <h3>What Makes The Project Different From A Single Trading Script</h3>
+      <div class="grid three">
+        <div class="card"><h3>Reproducible</h3><p>Every experiment writes a config snapshot, git commit reference, metrics, logs, and trained Q-table. The user can rerun or compare experiments without remembering manual notebook state.</p></div>
+        <div class="card"><h3>Extensible</h3><p>New ideas are usually added as YAML files or small plugins. The core runner and live bot do not need a new if/else branch for every strategy.</p></div>
+        <div class="card"><h3>Operational</h3><p>Live paper trading uses systemd services, per-bot runtime state, structured JSON logs, and rollback-friendly artifacts rather than a laptop notebook session.</p></div>
+      </div>
     </section>
 
     <section id="bots">
@@ -302,6 +314,85 @@
           <tr><td><code>apps/</code></td><td>CLI entry points for experiment, comparison, federation, and live bot.</td><td>Keeps executable workflows thin and auditable.</td></tr>
         </tbody>
       </table>
+
+      <h3>Why The Shared Core Matters</h3>
+      <p>The most common failure mode in trading prototypes is backtest/live drift: the notebook tests one thing, while the production script implements a slightly different state, fee, timing, or sizing rule. This repository reduces that risk by centralizing the rules. The training environment, diagnostics, and live bot all use the same agent abstraction, state encoders, reward functions, and portfolio accounting model.</p>
+      <p>For Quantphemes review, this means a live paper decision can be explained in a deterministic chain: the bot reads the current price, builds a <code>MarketContext</code>, encodes it into a state index, reads the corresponding Q-table row for the current decision point, chooses the greedy action, converts that action into a target quantity using the broker cash and lot size, then patches the holding through the API.</p>
+    </section>
+
+    <section id="data-config">
+      <h2>Data, Configuration, and Plugin System</h2>
+      <p>The system is designed so experiment behavior is visible in YAML rather than hidden in notebooks. Historical data, market assumptions, state encoder, reward function, agent class, training parameters, and evaluation settings are all declared in configuration files under <code>experiments/</code>.</p>
+
+      <div class="grid two">
+        <div class="card">
+          <h3>Accepted Data Inputs</h3>
+          <ul>
+            <li><strong>CSV:</strong> timestamp, open, high, low, close, volume.</li>
+            <li><strong>Futu CSV:</strong> time_key, open, close, high, low, volume, turnover.</li>
+            <li><strong>Bloomberg XLSX:</strong> Date, Open, High, Low, Last_Price, Volume, with case-insensitive field handling.</li>
+            <li><strong>Timezone rule:</strong> all bars are normalized to Hong Kong time and grouped into trading days.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Data Validation Rules</h3>
+          <ul>
+            <li>Required decision-time bars must exist for a day to be trainable.</li>
+            <li>The HK lunch break is expected and is not treated as missing data.</li>
+            <li>Final close handling matters because the strategy is day-trading and should be flat by end-of-day.</li>
+            <li>Malformed vendor files raise errors early instead of silently entering training.</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>Configuration Model</h3>
+      <table>
+        <thead><tr><th>Config Section</th><th>Controls</th><th>Why It Is Explicit</th></tr></thead>
+        <tbody>
+          <tr><td><code>data</code></td><td>Source, path, symbol, date range, train split.</td><td>Prevents ambiguity about which asset and historical period produced a Q-table.</td></tr>
+          <tr><td><code>market</code></td><td>Capital, fee, decision times, force close time, lot size.</td><td>Keeps backtest assumptions aligned with live trading constraints.</td></tr>
+          <tr><td><code>state</code></td><td>Encoder name and feature thresholds.</td><td>Makes feature changes auditable and prevents accidental baseline drift.</td></tr>
+          <tr><td><code>reward</code></td><td>Reward function and parameters.</td><td>Allows direct comparison of log-return, fee-aware, drawdown, and bias experiments.</td></tr>
+          <tr><td><code>agent</code></td><td>Agent type, action count, epsilon, learning mode.</td><td>Separates model behavior from market data and execution logic.</td></tr>
+          <tr><td><code>artifacts</code></td><td>Q-table path, runtime state path, log directory.</td><td>Lets multiple live bots run independently from the same repository.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Plugin Registry</h3>
+      <p>The registry is a small internal factory. Plugins register themselves by kind and name, for example <code>state_encoder: zscore_bins</code> or <code>reward_function: fee_aware</code>. The experiment runner and live bot call <code>build(kind, name, **kwargs)</code> instead of hard-coding classes. This is why we can run five internally trained bots plus two groupmate artifacts through the same production path.</p>
+    </section>
+
+    <section id="training">
+      <h2>Training, Evaluation, and Artifact Promotion</h2>
+      <p>Training is handled by <code>apps.run_experiment</code>. It loads a YAML config, builds plugins through the registry, loads historical bars, groups bars into validated trading days, runs a walk-forward training loop, evaluates the greedy policy, writes diagnostics, and saves the trained Q-table as <code>q_state.pkl</code>.</p>
+
+      <div class="grid two">
+        <div class="card">
+          <h3>Training Loop</h3>
+          <ul>
+            <li>Each episode shuffles training days to reduce ordering bias.</li>
+            <li>Each day starts with a fresh portfolio and zero position.</li>
+            <li>At each decision point the agent acts, receives reward, and updates the Q-table.</li>
+            <li>Epsilon decays after episodes, while visit counts preserve learning history.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Evaluation Loop</h3>
+          <ul>
+            <li>Evaluation runs greedily with <code>training=False</code>.</li>
+            <li>Baseline agents such as always-long, always-cash, and random can run alongside the main policy.</li>
+            <li>Metrics include final NAV, alpha versus buy-and-hold, Sharpe, trades, fees, and state coverage.</li>
+            <li>The generated report explains performance instead of only reporting a number.</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>Q-table Agent Mechanics</h3>
+      <p>The Q-table has one table per decision point. A 5-decision binary baseline has shape <code>5 × 27 × 2</code>, while ternary models use three actions for cash, half position, and full position. The agent stores both Q-values and visit counts. Visit counts drive per-cell learning rates and later diagnostics, including coverage heatmaps and federated merge weighting.</p>
+      <p>One hard rule is that exact Q-value ties break randomly. This prevents a silent default-to-cash bias in unvisited states. That rule matters because many live states may initially be sparse, especially when a richer encoder expands the number of possible bins.</p>
+
+      <h3>Promotion To Paper Trading</h3>
+      <p>A model is promoted by copying a selected <code>q_state.pkl</code> into the configured artifact path for a production YAML. No retraining happens in the live bot. The live bot only loads the artifact and acts greedily. This keeps production behavior stable and makes rollback simple: restore the previous artifact and restart the affected service.</p>
     </section>
 
     <section id="research">
@@ -351,6 +442,30 @@
 
       <h3>Why the Current Five Were Selected</h3>
       <p>The selected paper set is a monitoring portfolio rather than a final production claim. It includes broad ETF candidates with lower fee load, leveraged ETF candidates with more movement, and feature variants that allow us to observe live sensitivity to volatility and z-score regimes.</p>
+
+      <h3>Reward Function Rationale</h3>
+      <table>
+        <thead><tr><th>Reward</th><th>Purpose</th><th>Interpretation</th></tr></thead>
+        <tbody>
+          <tr><td><code>log_return</code></td><td>Pure baseline reward from portfolio value change.</td><td>Simple, finance-standard, and directly tied to compounded performance.</td></tr>
+          <tr><td><code>log_return_long_bias</code></td><td>Tests whether the agent was too reluctant to take exposure.</td><td>Useful for behavior discovery, but it can increase fee spend if overused.</td></tr>
+          <tr><td><code>fee_aware</code></td><td>Adds stronger pressure against unnecessary position changes.</td><td>Important because round-trip cost is large relative to many intraday ETF moves.</td></tr>
+          <tr><td><code>drawdown_penalty</code></td><td>Penalizes poor intraday NAV dips.</td><td>Designed to reduce policies that only look good at the close but suffer unstable paths.</td></tr>
+          <tr><td><code>sparse_liquidation</code></td><td>Concentrates reward around realized liquidation outcomes.</td><td>Useful as a research contrast, but often increases noisy turnover.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>State Encoder Rationale</h3>
+      <table>
+        <thead><tr><th>Encoder</th><th>Features</th><th>Reason For Testing</th></tr></thead>
+        <tbody>
+          <tr><td><code>three_feature</code></td><td>Move vs yesterday close, today open, and previous decision price.</td><td>Compact baseline matching the original QP-spec 27-state setup.</td></tr>
+          <tr><td><code>zscore_bins</code></td><td>Price moves normalized by recent volatility.</td><td>Attempts to compare moves across assets with different volatility scales.</td></tr>
+          <tr><td><code>with_volatility</code></td><td>Baseline price state plus realized volatility regime.</td><td>Tests whether the policy should behave differently in quiet versus active intraday markets.</td></tr>
+          <tr><td><code>with_rsi</code></td><td>Adds momentum/overbought-oversold proxy.</td><td>Tests whether short-term reversal or trend context improves decisions.</td></tr>
+          <tr><td><code>with_volume</code></td><td>Adds relative volume or spike context.</td><td>Tests whether liquidity/activity changes help distinguish meaningful price moves.</td></tr>
+        </tbody>
+      </table>
     </section>
 
     <section id="operations">
@@ -367,6 +482,22 @@
         <li>Price reads may succeed for a symbol even when trade PATCHes are rejected. Tradeability must be verified separately.</li>
         <li>Live bot force-close behavior explicitly targets zero quantity near market close; the broker still determines actual execution and paper-trade visibility.</li>
       </ul>
+
+      <h3>Live Decision Lifecycle</h3>
+      <table>
+        <thead><tr><th>Stage</th><th>What Happens</th><th>Audit Trail</th></tr></thead>
+        <tbody>
+          <tr><td>Morning setup</td><td>The bot waits for the HK session, fetches or records the open, and loads runtime state.</td><td><code>runtime_state_*.json</code></td></tr>
+          <tr><td>Decision time</td><td>The bot fetches current price, builds state, chooses action, and computes target quantity.</td><td>JSON decision log with state tuple and action.</td></tr>
+          <tr><td>Broker sync</td><td>The bot reads cash/current quantity and patches target holdings when live mode is enabled.</td><td>Quantphemes API response and bot status field.</td></tr>
+          <tr><td>Heartbeat</td><td>If action is unchanged, the bot can still send a same-target patch as a heartbeat.</td><td>Status value distinguishes heartbeat from target change.</td></tr>
+          <tr><td>Close</td><td>The bot targets zero quantity near close and records the close for tomorrow's previous close.</td><td>Force-close log entry and runtime state update.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Groupmate Bot Integration</h3>
+      <p>The two groupmate ZIP artifacts contained standalone bot scripts and Q-table pickle files. Their Q-tables were structurally compatible with the repository agent format: <code>5 × 27 × 2</code> tables, visit counts, and the same three-feature threshold structure. They were converted into the standard <code>QTableAgent.save</code> artifact format so they can run through the same <code>apps.bot</code> live path as the internally trained models.</p>
+      <p>During that integration, a live-state bug was fixed: <code>delta_prev</code> must use the previous decision price, not the current price. Without that fix, the third feature would be artificially neutral during live trading. The fix benefits both internal and groupmate Q-tables.</p>
     </section>
 
     <section id="documentation">
@@ -383,11 +514,21 @@
       </table>
     </section>
 
-    <section id="next">
-      <h2>Limitations and Next Steps</h2>
+    <section id="quality">
+      <h2>Quality Controls and Current Boundaries</h2>
+      <p>The repository includes automated tests for registry behavior, data adapters, portfolio accounting, trading environment reward timing, Q-table updates, baselines, config loading, experiment execution, reports, live-bot logic, runtime state, and federated merge behavior. The most important trading invariants are covered by regression tests because small logic errors can dominate strategy outcomes.</p>
       <div class="grid two">
         <div class="card">
-          <h3>Current Limitations</h3>
+          <h3>Automated Quality Gates</h3>
+          <ul>
+            <li><code>ruff check .</code> for linting and import hygiene.</li>
+            <li><code>pytest -q</code> for unit and smoke tests.</li>
+            <li><code>mkdocs build --strict</code> for documentation link/build validation.</li>
+            <li>GitHub Actions runs CI and documentation builds on the repository.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Current Boundaries</h3>
           <ul>
             <li>Tabular models are explainable but limited; they cannot learn richer nonlinear patterns.</li>
             <li>Intraday ETF edges are small relative to the 40 bps round-trip cost.</li>
@@ -395,16 +536,18 @@
             <li>Backtest alpha versus buy-and-hold should be validated over more market regimes.</li>
           </ul>
         </div>
-        <div class="card">
-          <h3>Proposed Next Work</h3>
-          <ul>
-            <li>Run M5 and M15 research variants for higher-resolution decision points.</li>
-            <li>Add live fee-ratio alerts, especially for high-turnover 7226.HK strategies.</li>
-            <li>Expand diagnostics to compare live paper decisions against offline expectations.</li>
-            <li>Prototype a DQN plugin only after tabular baselines remain stable in paper trading.</li>
-          </ul>
-        </div>
       </div>
+
+      <h3>What The Report Does Not Claim</h3>
+      <p>This report does not claim that the current paper strategies are production-profitable. It claims that the system for researching, diagnosing, deploying, and monitoring Q-table strategies is implemented and auditable. Live paper results should be interpreted together with broker execution behavior, fee load, market regime, and symbol tradeability.</p>
+
+      <h3>Quantphemes Discussion Points</h3>
+      <ul>
+        <li>Confirm the official tradable universe for HK ETFs and leveraged ETFs.</li>
+        <li>Clarify how paper holding PATCHes map to visible orders, fills, and position updates in the dashboard.</li>
+        <li>Confirm plan-level constraints around strategy automation, paper portfolios, and API request limits.</li>
+        <li>Confirm best-practice endpoint usage for intraday prices versus trading/holding updates.</li>
+      </ul>
     </section>
 
     <div class="footer">
