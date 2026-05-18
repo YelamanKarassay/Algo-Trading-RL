@@ -24,6 +24,7 @@ class RuntimeState:
     today_date: str | None = None
     today_open: float | None = None
     yesterday_close: float | None = None
+    prev_decision_price: float | None = None
     last_action_at_decision: dict[str, int] = field(default_factory=dict)
 def main(argv: list[str] | None = None) -> None:
     _load_env_file(Path(".env"))
@@ -183,11 +184,12 @@ def handle_decision(
         if client is None
         else get_position_state(client, strategy_id)
     )
+    prev_decision_price = runtime.prev_decision_price or runtime.today_open or price
     ctx = MarketContext(
         price,
         runtime.today_open or price,
         runtime.yesterday_close or runtime.today_open or price,
-        price,
+        prev_decision_price,
         decision_index,
         len(cfg.market.decision_times),
     )
@@ -209,9 +211,15 @@ def handle_decision(
     if not dry_run and client is not None:
         patch_target(client, strategy_id, _api_symbol(cfg.data.symbol), target)
     runtime.last_action_at_decision[decision_time] = action
+    runtime.prev_decision_price = price
     return {
         "timestamp": _iso_now(),
-        "state_tuple": [ctx.current_price, ctx.today_open, ctx.yesterday_close, price],
+        "state_tuple": [
+            ctx.current_price,
+            ctx.today_open,
+            ctx.yesterday_close,
+            ctx.prev_decision_price,
+        ],
         "state": state,
         "action": action,
         "price": price,

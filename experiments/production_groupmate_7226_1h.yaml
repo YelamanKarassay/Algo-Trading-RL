@@ -1,0 +1,29 @@
+inherits: _baseline.yaml
+name: production_groupmate_7226_1h
+description: Paper deployment for groupmate RL Q-Learning 1 Leverage, 7226.HK 1h QP-spec binary Q-table.
+data:
+  source: csv
+  path: data/raw/groupmate_7226_hk_5min.csv
+  symbol: 7226.HK
+  start: 2020-12-10
+  end: 2026-05-11
+market:
+  decision_times: ["10:00", "11:00", "13:01", "14:01", "15:01"]
+  force_close_time: "15:56"
+  lot_size: 100
+state:
+  encoder: three_feature
+  kwargs:
+    thresholds:
+      delta_close: [-0.010, 0.010]
+      delta_open: [-0.007, 0.007]
+      delta_prev: [-0.005, 0.005]
+agent:
+  kwargs:
+    num_decision_points: 5
+    num_states: 27
+    num_actions: 2
+artifacts:
+  q_state_path: artifacts/deploy/groupmate_7226_1h_q_state.pkl
+  log_dir: artifacts/logs/groupmate_7226_1h/
+  runtime_state_path: artifacts/runtime_state_groupmate_7226_1h.json
