@@ -79,6 +79,33 @@ def test_compute_target_quantity_cash() -> None:
     assert compute_target_quantity(0, 1_000_000.0, 49_500, 20.0, 500, 0.002) == 0
 
 
+def test_compute_target_quantity_ternary_half() -> None:
+    target = compute_target_quantity(
+        action=1,
+        cash=1_000_000.0,
+        current_qty=0,
+        price=20.0,
+        lot_size=500,
+        fee_rate=0.002,
+        num_actions=3,
+    )
+
+    assert target == 25_000
+
+
+def test_compute_target_quantity_heartbeat_keeps_existing_full_position() -> None:
+    target = compute_target_quantity(
+        action=1,
+        cash=0.0,
+        current_qty=500,
+        price=20.0,
+        lot_size=500,
+        fee_rate=0.002,
+    )
+
+    assert target == 500
+
+
 def test_heartbeat_when_action_unchanged() -> None:
     client = MockClient(cash=0.0, qty=500)
 

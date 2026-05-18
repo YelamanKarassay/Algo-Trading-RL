@@ -1,0 +1,7 @@
+inherits: research/research_7299_30m_log_return_long_bias_three_feature_binary.yaml
+name: production_rl_bias
+description: Paper deployment for RL_BIAS, 7299.HK 30m long-bias binary Q-table.
+artifacts:
+  q_state_path: artifacts/deploy/rl_bias_q_state.pkl
+  log_dir: artifacts/logs/rl_bias/
+  runtime_state_path: artifacts/runtime_state_rl_bias.json

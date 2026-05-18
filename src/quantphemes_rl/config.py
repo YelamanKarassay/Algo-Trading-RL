@@ -71,6 +71,7 @@ class ArtifactsConfig(BaseModel):
 
     q_state_path: str = "artifacts/q_state.pkl"
     log_dir: str = "artifacts/logs/"
+    runtime_state_path: str = "artifacts/runtime_state.json"
 
 
 class ExperimentConfig(BaseModel):

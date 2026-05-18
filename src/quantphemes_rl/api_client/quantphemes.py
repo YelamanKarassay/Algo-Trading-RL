@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import logging
+import time
 from typing import Any
 
 import requests
+
+log = logging.getLogger(__name__)
 
 
 class QuantphemesAPIError(Exception):
@@ -13,11 +17,18 @@ class QuantphemesClient:
     """Thin client for documented Quantphemes API endpoints."""
 
     def __init__(
-        self, api_key: str, base_url: str = "https://api.quantphemes.com", timeout: float = 10.0
+        self,
+        api_key: str,
+        base_url: str = "https://api.quantphemes.com",
+        timeout: float = 20.0,
+        max_retries: int = 2,
+        retry_sleep_seconds: float = 2.0,
     ) -> None:
         self.api_key = api_key
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
+        self.max_retries = max_retries
+        self.retry_sleep_seconds = retry_sleep_seconds
         self.session = requests.Session()
         self.session.headers.update({"Authorization": f"Bearer {api_key}"})
 
@@ -54,7 +65,22 @@ class QuantphemesClient:
 
     def _request(self, method: str, path: str, **kwargs: Any) -> Any:
         kwargs.setdefault("timeout", self.timeout)
-        response = self.session.request(method, f"{self.base_url}{path}", **kwargs)
+        response = None
+        for attempt in range(self.max_retries + 1):
+            try:
+                response = self.session.request(method, f"{self.base_url}{path}", **kwargs)
+                break
+            except (requests.ConnectionError, requests.Timeout):
+                if attempt >= self.max_retries:
+                    raise
+                log.warning(
+                    "Quantphemes API request failed; retrying",
+                    extra={"method": method, "path": path, "attempt": attempt + 1},
+                )
+                time.sleep(self.retry_sleep_seconds)
+        if response is None:
+            msg = f"Quantphemes API {method} {path} did not return a response."
+            raise QuantphemesAPIError(msg)
         if not 200 <= response.status_code < 300:
             msg = (
                 f"Quantphemes API {method} {path} failed with status "

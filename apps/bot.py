@@ -62,7 +62,7 @@ def run_bot(
         agent.load(q_state_path)
     client = UndocumentedQuantphemesClient(api_key) if api_key else None
     log_dir = Path(cfg.artifacts.log_dir)
-    runtime_path = Path("artifacts/runtime_state.json")
+    runtime_path = Path(cfg.artifacts.runtime_state_path)
     runtime = load_runtime_state(runtime_path)
     now = simulate_now or datetime.now(HK_TZ)
     if simulate_now is None:
@@ -148,11 +148,24 @@ def run_bot(
         runtime.yesterday_close = close
         save_runtime_state(runtime_path, runtime)
 def compute_target_quantity(
-    action: int, cash: float, current_qty: int, price: float, lot_size: int, fee_rate: float
+    action: int,
+    cash: float,
+    current_qty: int,
+    price: float,
+    lot_size: int,
+    fee_rate: float,
+    num_actions: int = 2,
 ) -> int:
     if action == 0:
         return 0
-    return current_qty + int(cash // (lot_size * price * (1.0 + fee_rate))) * lot_size
+    fraction = 1.0 if num_actions <= 2 else action / (num_actions - 1)
+    equity = cash + current_qty * price
+    target_notional = equity * fraction
+    raw_target = int(target_notional // (lot_size * price)) * lot_size
+    if raw_target <= current_qty:
+        return raw_target
+    max_affordable = current_qty + int(cash // (lot_size * price * (1.0 + fee_rate))) * lot_size
+    return min(raw_target, max_affordable)
 def handle_decision(
     client: Any,
     strategy_id: str,
@@ -190,6 +203,7 @@ def handle_decision(
         price,
         cfg.market.lot_size,
         cfg.market.fee_bps_one_side / 10_000,
+        int(cfg.agent.kwargs.get("num_actions", 2)),
     )
     status = "heartbeat" if target == current_qty else "target_changed"
     if not dry_run and client is not None:

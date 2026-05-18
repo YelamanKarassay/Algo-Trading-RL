@@ -1,0 +1,7 @@
+inherits: research/research_7226_30m_drawdown_penalty_with_volatility_binary.yaml
+name: production_rl_vol
+description: Paper deployment for RL_VOL, 7226.HK 30m drawdown volatility binary Q-table.
+artifacts:
+  q_state_path: artifacts/deploy/rl_vol_q_state.pkl
+  log_dir: artifacts/logs/rl_vol/
+  runtime_state_path: artifacts/runtime_state_rl_vol.json

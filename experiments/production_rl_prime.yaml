@@ -1,0 +1,7 @@
+inherits: research/research_7299_30m_fee_aware_three_feature_ternary.yaml
+name: production_rl_prime
+description: Paper deployment for RL_PRIME, 7299.HK 30m fee-aware ternary Q-table.
+artifacts:
+  q_state_path: artifacts/deploy/rl_prime_q_state.pkl
+  log_dir: artifacts/logs/rl_prime/
+  runtime_state_path: artifacts/runtime_state_rl_prime.json

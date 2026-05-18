@@ -1,0 +1,7 @@
+inherits: research/research_7299_30m_drawdown_penalty_zscore_bins_binary.yaml
+name: production_rl_fullcov
+description: Paper deployment for RL_FULLCOV, 7299.HK 30m drawdown z-score binary Q-table.
+artifacts:
+  q_state_path: artifacts/deploy/rl_fullcov_q_state.pkl
+  log_dir: artifacts/logs/rl_fullcov/
+  runtime_state_path: artifacts/runtime_state_rl_fullcov.json
