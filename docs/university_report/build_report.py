@@ -1,0 +1,578 @@
+from __future__ import annotations
+
+import html
+import json
+from datetime import date
+from pathlib import Path
+from typing import Any
+
+import matplotlib.pyplot as plt
+import pandas as pd
+import yaml
+
+ROOT = Path(__file__).resolve().parents[2]
+OUT = ROOT / "docs" / "university_report"
+FIG = OUT / "figures"
+REPO_URL = "https://github.com/YelamanKarassay/Algo-Trading-RL"
+DOCS_URL = "https://yelamankarassay.github.io/Algo-Trading-RL/"
+
+SELECTED = {
+    "RL_CROSS": "research_7226_30m_drawdown_penalty_three_feature_binary",
+    "RL_VOL": "research_7226_30m_drawdown_penalty_with_volatility_binary",
+    "RL_FACOV": "research_7226_30m_fee_aware_zscore_bins_ternary",
+    "RL_BROAD_A": "research_2800_30m_fee_aware_zscore_bins_ternary",
+    "RL_BROAD_B": "research_2828_30m_log_return_with_volatility_ternary",
+}
+
+
+def main() -> None:
+    FIG.mkdir(parents=True, exist_ok=True)
+    all_results = load_results()
+    selected = selected_results(all_results)
+
+    plot_architecture()
+    plot_selected_alpha(selected)
+    plot_nav_curves(selected)
+    plot_fee_vs_trades(all_results)
+    plot_reward_distribution(all_results)
+    plot_threshold_scaling()
+
+    html_text = render_report(all_results, selected)
+    (OUT / "quantphemes_rl_scientific_report.html").write_text(html_text, encoding="utf-8")
+
+
+def load_results() -> pd.DataFrame:
+    rows_by_name: dict[str, dict[str, Any]] = {}
+    for metrics_path in (ROOT / "results").glob("*/metrics.json"):
+        result_dir = metrics_path.parent
+        config_path = result_dir / "config.snapshot.yaml"
+        eval_path = result_dir / "eval_log.csv"
+        if not config_path.exists():
+            continue
+        try:
+            metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
+            config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+            name = str(config["name"])
+        except Exception:
+            continue
+        row = {
+            "result_dir": str(result_dir),
+            "name": name,
+            "asset": config["data"]["symbol"],
+            "interval": infer_interval(config),
+            "reward": config["reward"]["function"],
+            "encoder": config["state"]["encoder"],
+            "actions": int(config["agent"]["kwargs"].get("num_actions", 2)),
+            "final_nav": float(metrics.get("final_nav", 0.0)),
+            "return_pct": float(metrics.get("return", 0.0)) * 100.0,
+            "alpha_pct": float(metrics.get("alpha_vs_bh", 0.0)) * 100.0,
+            "sharpe": float(metrics.get("sharpe", 0.0)),
+            "num_trades": int(metrics.get("num_trades", 0)),
+            "total_fees": float(metrics.get("total_fees", 0.0)),
+            "coverage_pct": float(metrics.get("pct_states_visited", 0.0)) * 100.0,
+            "eval_path": str(eval_path) if eval_path.exists() else "",
+        }
+        existing = rows_by_name.get(name)
+        if existing is None or row["result_dir"] > existing["result_dir"]:
+            rows_by_name[name] = row
+    return pd.DataFrame(rows_by_name.values())
+
+
+def selected_results(frame: pd.DataFrame) -> pd.DataFrame:
+    rows = []
+    for label, name in SELECTED.items():
+        subset = frame[frame["name"] == name]
+        if subset.empty:
+            continue
+        row = subset.iloc[0].to_dict()
+        row["bot"] = label
+        rows.append(row)
+    return pd.DataFrame(rows)
+
+
+def infer_interval(config: dict[str, Any]) -> str:
+    count = len(config["market"].get("decision_times", []))
+    if count == 9:
+        return "30m"
+    if count in {4, 5}:
+        return "1h"
+    if count == 1:
+        return "EOD"
+    return f"{count} decisions"
+
+
+def plot_architecture() -> None:
+    fig, ax = plt.subplots(figsize=(11, 5.8))
+    ax.axis("off")
+    boxes = [
+        ("YAML configs", 0.05, 0.68),
+        ("Pydantic validation", 0.27, 0.68),
+        ("Plugin registry", 0.49, 0.68),
+        ("Core RL engine", 0.71, 0.68),
+        ("Data adapters", 0.05, 0.28),
+        ("TradingEnv + Portfolio", 0.27, 0.28),
+        ("QTableAgent", 0.49, 0.28),
+        ("Results / Live bot", 0.71, 0.28),
+    ]
+    for text, x, y in boxes:
+        ax.add_patch(
+            plt.Rectangle((x, y), 0.18, 0.16, fc="#f7faf7", ec="#355f4d", lw=1.5)
+        )
+        ax.text(x + 0.09, y + 0.08, text, ha="center", va="center", fontsize=11, weight="bold")
+    arrows = [
+        (0.23, 0.76, 0.27, 0.76),
+        (0.45, 0.76, 0.49, 0.76),
+        (0.67, 0.76, 0.71, 0.76),
+        (0.14, 0.68, 0.14, 0.44),
+        (0.36, 0.68, 0.36, 0.44),
+        (0.58, 0.68, 0.58, 0.44),
+        (0.80, 0.68, 0.80, 0.44),
+        (0.23, 0.36, 0.27, 0.36),
+        (0.45, 0.36, 0.49, 0.36),
+        (0.67, 0.36, 0.71, 0.36),
+    ]
+    for x1, y1, x2, y2 in arrows:
+        ax.annotate("", xy=(x2, y2), xytext=(x1, y1), arrowprops={"arrowstyle": "->", "lw": 1.5})
+    ax.set_title("High-level system architecture", fontsize=16, weight="bold", pad=18)
+    fig.tight_layout()
+    fig.savefig(FIG / "architecture.png", dpi=180)
+    plt.close(fig)
+
+
+def plot_selected_alpha(selected: pd.DataFrame) -> None:
+    fig, ax1 = plt.subplots(figsize=(10.5, 5.2))
+    ax1.bar(selected["bot"], selected["alpha_pct"], color="#226f54", alpha=0.85)
+    ax1.axhline(0, color="#222222", lw=0.8)
+    ax1.set_ylabel("Alpha vs buy-and-hold (%)")
+    ax1.set_title("Selected paper-bot candidates: alpha and fee load", weight="bold")
+    ax2 = ax1.twinx()
+    ax2.plot(selected["bot"], selected["total_fees"] / 1_000_000 * 100, color="#b66b18", marker="o")
+    ax2.set_ylabel("Fees as % of HKD 1,000,000 capital")
+    ax1.tick_params(axis="x", rotation=25)
+    fig.tight_layout()
+    fig.savefig(FIG / "selected_alpha_fees.png", dpi=180)
+    plt.close(fig)
+
+
+def plot_nav_curves(selected: pd.DataFrame) -> None:
+    fig, ax = plt.subplots(figsize=(10.5, 5.2))
+    plotted = False
+    for row in selected.to_dict("records"):
+        eval_path = Path(row["eval_path"])
+        if not eval_path.exists():
+            continue
+        data = pd.read_csv(eval_path)
+        main = data[data["agent"] == "main"]
+        if main.empty:
+            continue
+        ax.plot(main["day_index"], main["nav"], label=row["bot"], lw=2)
+        plotted = True
+    ax.axhline(1_000_000, color="#333333", lw=0.8, ls="--", label="Initial capital")
+    ax.set_title("Out-of-sample NAV curves for selected candidates", weight="bold")
+    ax.set_xlabel("Evaluation day index")
+    ax.set_ylabel("NAV (HKD)")
+    if plotted:
+        ax.legend(ncol=2, fontsize=9)
+    fig.tight_layout()
+    fig.savefig(FIG / "selected_nav_curves.png", dpi=180)
+    plt.close(fig)
+
+
+def plot_fee_vs_trades(frame: pd.DataFrame) -> None:
+    data = frame[frame["name"].str.startswith("research_")].copy()
+    if data.empty:
+        return
+    fig, ax = plt.subplots(figsize=(10.5, 5.4))
+    for asset, subset in data.groupby("asset"):
+        ax.scatter(subset["num_trades"], subset["alpha_pct"], s=42, alpha=0.75, label=asset)
+    ax.axhline(0, color="#333333", lw=0.8)
+    ax.set_title("Research sweep: trade count versus alpha", weight="bold")
+    ax.set_xlabel("Number of trades")
+    ax.set_ylabel("Alpha vs buy-and-hold (%)")
+    ax.legend(fontsize=8)
+    fig.tight_layout()
+    fig.savefig(FIG / "fee_trade_scatter.png", dpi=180)
+    plt.close(fig)
+
+
+def plot_reward_distribution(frame: pd.DataFrame) -> None:
+    data = frame[frame["name"].str.startswith("research_")].copy()
+    if data.empty:
+        return
+    rewards = sorted(data["reward"].unique())
+    values = [data[data["reward"] == reward]["alpha_pct"].values for reward in rewards]
+    fig, ax = plt.subplots(figsize=(10.5, 5.2))
+    ax.boxplot(values, labels=rewards, showfliers=False)
+    ax.axhline(0, color="#333333", lw=0.8)
+    ax.set_title("Research sweep: alpha distribution by reward function", weight="bold")
+    ax.set_ylabel("Alpha vs buy-and-hold (%)")
+    ax.tick_params(axis="x", rotation=20)
+    fig.tight_layout()
+    fig.savefig(FIG / "reward_distribution.png", dpi=180)
+    plt.close(fig)
+
+
+def plot_threshold_scaling() -> None:
+    rows = [
+        ("Base 1h broad ETF", 1.0),
+        ("30m broad ETF", 1 / 1.4),
+        ("30m 2x leveraged", 1.8 / 1.4),
+        ("30m 3x leveraged", 2.6 / 1.4),
+    ]
+    base = {"close": 1.5, "open": 1.0, "previous": 0.8}
+    fig, ax = plt.subplots(figsize=(10.5, 5.2))
+    width = 0.22
+    x = range(len(rows))
+    for i, feature in enumerate(base):
+        values = [base[feature] * mult for _, mult in rows]
+        ax.bar([item + (i - 1) * width for item in x], values, width=width, label=feature)
+    ax.set_xticks(list(x), [label for label, _ in rows], rotation=18, ha="right")
+    ax.set_ylabel("Absolute threshold (%)")
+    ax.set_title("Threshold scaling heuristic", weight="bold")
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(FIG / "threshold_scaling.png", dpi=180)
+    plt.close(fig)
+
+
+def render_report(frame: pd.DataFrame, selected: pd.DataFrame) -> str:
+    selected_rows = "\n".join(
+        f"""
+        <tr>
+          <td>{esc(row['bot'])}</td>
+          <td>{esc(row['asset'])}</td>
+          <td>{esc(row['reward'])}</td>
+          <td>{esc(row['encoder'])}</td>
+          <td>{int(row['actions'])}</td>
+          <td>{row['alpha_pct']:.2f}%</td>
+          <td>{row['sharpe']:.3f}</td>
+          <td>{int(row['num_trades'])}</td>
+          <td>HKD {row['total_fees']:,.0f}</td>
+        </tr>
+        """
+        for row in selected.to_dict("records")
+    )
+    top = frame[frame["name"].str.startswith("research_")].sort_values(
+        "alpha_pct", ascending=False
+    ).head(10)
+    top_rows = "\n".join(
+        f"""
+        <tr>
+          <td>{esc(row['name'])}</td>
+          <td>{esc(row['asset'])}</td>
+          <td>{esc(row['reward'])}</td>
+          <td>{esc(row['encoder'])}</td>
+          <td>{int(row['actions'])}</td>
+          <td>{row['alpha_pct']:.2f}%</td>
+          <td>{int(row['num_trades'])}</td>
+        </tr>
+        """
+        for row in top.to_dict("records")
+    )
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Scientific Report - Quantphemes RL Trading System</title>
+  <style>
+    @page {{ size: A4; margin: 18mm 16mm 18mm 16mm; }}
+    * {{ box-sizing: border-box; }}
+    body {{
+      margin: 0;
+      color: #141b18;
+      background: #ffffff;
+      font-family: "Times New Roman", Times, serif;
+      font-size: 11.2pt;
+      line-height: 1.48;
+    }}
+    a {{ color: #174f8a; text-decoration: none; }}
+    h1, h2, h3 {{ font-family: Arial, Helvetica, sans-serif; color: #111c18; }}
+    h1 {{ font-size: 25pt; line-height: 1.12; margin: 0 0 10mm; }}
+    h2 {{
+      font-size: 16pt;
+      margin: 11mm 0 4mm;
+      padding-bottom: 2mm;
+      border-bottom: 1px solid #8a9991;
+      break-after: avoid;
+    }}
+    h3 {{ font-size: 12.5pt; margin: 7mm 0 2mm; break-after: avoid; }}
+    p {{ margin: 0 0 3.5mm; text-align: justify; orphans: 3; widows: 3; }}
+    .title-page {{
+      min-height: 250mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      border-bottom: 2px solid #1d2b25;
+      page-break-after: always;
+    }}
+    .subtitle {{ font-size: 14pt; color: #3b4a43; margin-bottom: 12mm; text-align: left; }}
+    .meta {{ font-family: Arial, Helvetica, sans-serif; color: #48584f; font-size: 10.2pt; }}
+    .authors {{
+      font-family: Arial, Helvetica, sans-serif;
+      color: #2f3f38;
+      font-size: 10.5pt;
+      line-height: 1.55;
+      margin: 0 0 8mm;
+      text-align: left;
+    }}
+    .abstract {{
+      border: 1px solid #c6d1cb;
+      background: #f7faf8;
+      padding: 5mm;
+      margin: 7mm 0;
+      break-inside: avoid;
+    }}
+    .toc {{
+      border: 1px solid #d4ddd7;
+      padding: 5mm;
+      background: #fbfcfb;
+      break-inside: avoid;
+    }}
+    .toc ol {{ margin: 0; padding-left: 6mm; }}
+    table {{ width: 100%; border-collapse: collapse; margin: 4mm 0 7mm; break-inside: avoid; }}
+    th, td {{ border: 1px solid #cbd5cf; padding: 2.2mm; vertical-align: top; font-size: 9pt; }}
+    th {{ background: #edf2ef; font-family: Arial, Helvetica, sans-serif; text-align: left; }}
+    figure {{ margin: 6mm 0 8mm; break-inside: avoid; page-break-inside: avoid; }}
+    figcaption {{ font-size: 9.2pt; color: #46554f; margin-top: 2mm; }}
+    img {{ width: 100%; max-height: 160mm; object-fit: contain; }}
+    .equation {{
+      margin: 4mm 8mm;
+      padding: 3mm 5mm;
+      background: #f7f8f7;
+      border-left: 3px solid #527867;
+      font-family: "Times New Roman", Times, serif;
+      font-size: 12.5pt;
+      text-align: center;
+      break-inside: avoid;
+    }}
+    .eqno {{ float: right; color: #52615a; }}
+    .code {{
+      font-family: "Courier New", monospace;
+      background: #f5f7f5;
+      padding: 1px 3px;
+      border-radius: 2px;
+    }}
+    .note {{
+      border-left: 4px solid #8c5f16;
+      background: #fff8ec;
+      padding: 4mm;
+      margin: 5mm 0;
+      break-inside: avoid;
+    }}
+    .page-break {{ page-break-before: always; }}
+    .refs p {{ padding-left: 8mm; text-indent: -8mm; text-align: left; }}
+  </style>
+</head>
+<body>
+  <section class="title-page">
+    <h1>Quantphemes RL: A Reproducible Q-Learning Research and Paper-Trading System for Hong Kong ETFs</h1>
+    <p class="subtitle">Architecture, methodology, experimental results, deployment model, and technical limitations</p>
+    <p class="authors"><strong>Authors:</strong><br>
+    Yelaman Karassay (Student ID: 25451480)<br>
+    Lucas Faivre (Student ID: 25434578)<br>
+    Tianru Zhou (Student ID: 25408461)<br>
+    Peiying Zhu (Student ID: 25410407)</p>
+    <p class="meta"><strong>Date:</strong> {date.today().isoformat()}<br>
+    <strong>Repository:</strong> <a href="{REPO_URL}">{REPO_URL}</a><br>
+    <strong>Documentation:</strong> <a href="{DOCS_URL}">{DOCS_URL}</a></p>
+  </section>
+
+  <section>
+    <h2>Abstract</h2>
+    <div class="abstract">
+      <p>This report documents a Python-based reinforcement-learning research system for intraday Hong Kong ETF paper trading through the Quantphemes API. The system uses tabular Q-learning, YAML-configured experiments, modular plugins for data sources, state encoders, reward functions, and agents, and a shared core between offline backtesting and live paper execution. The project is research-oriented: negative or unstable trading performance is treated as evidence about model, data, and fee constraints rather than as implementation failure. Results indicate that transaction costs, state coverage, and backtest/live parity are the dominant technical concerns for continued development.</p>
+    </div>
+    <p><strong>Keywords:</strong> reinforcement learning; Q-learning; algorithmic trading; Hong Kong ETFs; paper trading; Quantphemes; tabular policy; transaction costs.</p>
+
+    <h2>Contents</h2>
+    <div class="toc">
+      <ol>
+        <li>Introduction and research objective</li>
+        <li>System architecture and software design</li>
+        <li>Data sources and preprocessing</li>
+        <li>Reinforcement-learning methodology</li>
+        <li>Experiment design and selected paper bots</li>
+        <li>Results and diagnostic interpretation</li>
+        <li>Live deployment model</li>
+        <li>Limitations, critique, and future work</li>
+        <li>References</li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <h2>1. Introduction and Research Objective</h2>
+    <p>The project investigates whether simple tabular reinforcement-learning policies can make useful intraday allocation decisions for Hong Kong exchange-traded funds (ETFs). The original production-oriented asset was <span class="code">2800.HK</span>, while the broader research workflow also tests related ETFs such as <span class="code">2828.HK</span> and leveraged ETFs such as <span class="code">7226.HK</span>.</p>
+    <p>The research question is practical rather than purely theoretical: can a small, inspectable Q-table policy learn when to hold cash, partial exposure, or full exposure after accounting for one-side transaction fees, lot-size constraints, and end-of-day flattening? The system is therefore designed around reproducibility, auditability, and explainability.</p>
+    <p>The source code is available at <a href="{REPO_URL}">{REPO_URL}</a>. The project documentation portal is available at <a href="{DOCS_URL}">{DOCS_URL}</a>.</p>
+  </section>
+
+  <section>
+    <h2>2. System Architecture and Software Design</h2>
+    <p>The repository is a modular Python monolith using a <span class="code">src/</span> layout. Core reusable code lives under <span class="code">src/quantphemes_rl/</span>, while executable workflows live under <span class="code">apps/</span>. This separation makes the research runner, comparison tools, federation tool, Webull downloader, and live bot share the same domain logic.</p>
+    <figure>
+      <img src="figures/architecture.png" alt="Architecture diagram">
+      <figcaption><strong>Figure 1.</strong> High-level architecture. YAML configs are validated, plugins are built from the registry, and the same core components support both offline experiments and live paper execution.</figcaption>
+    </figure>
+    <p>The central design pattern is a lightweight plugin registry. Four extension points are registered by name: <span class="code">data_source</span>, <span class="code">state_encoder</span>, <span class="code">reward_function</span>, and <span class="code">agent</span>. This allows new research hypotheses to be expressed mostly as YAML changes rather than new control-flow branches.</p>
+    <table>
+      <thead><tr><th>Layer</th><th>Main files</th><th>Responsibility</th></tr></thead>
+      <tbody>
+        <tr><td>Configuration</td><td><span class="code">src/quantphemes_rl/config.py</span></td><td>Load YAML, resolve inheritance, validate experiment settings with Pydantic.</td></tr>
+        <tr><td>Data</td><td><span class="code">data/base.py</span>, <span class="code">csv_source.py</span>, <span class="code">futu_source.py</span>, <span class="code">bloomberg_source.py</span></td><td>Normalize vendor files into Hong Kong-time OHLCV bars.</td></tr>
+        <tr><td>Model</td><td><span class="code">agent/qtable.py</span>, <span class="code">state/</span>, <span class="code">reward/</span></td><td>Encode state, select actions, update Q-values, compute rewards.</td></tr>
+        <tr><td>Simulation</td><td><span class="code">env/trading_env.py</span>, <span class="code">portfolio/portfolio.py</span></td><td>Simulate intraday decisions, cash, shares, lots, fees, and force-close behavior.</td></tr>
+        <tr><td>Applications</td><td><span class="code">apps/run_experiment.py</span>, <span class="code">apps/bot.py</span>, <span class="code">apps/research_sweep.py</span></td><td>Train experiments, run live paper bots, generate research grids.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>3. Data Sources and Preprocessing</h2>
+    <p>Historical bars are stored as OHLCV data with Hong Kong timezone timestamps. The main practical sources used in the project are Webull and Futu exports. Bloomberg XLSX import support exists in the repository, but it was not the primary data path for the current experiment batch. Webull's market-data documentation states that its Market Data API supports historical and snapshot data for Hong Kong stocks and ETFs, including OHLCV candlestick bars (Webull, n.d.).</p>
+    <p>Every trading day is converted into a <span class="code">DayData</span> object. A day is rejected if any required decision-time bar is missing. This is important because the agent expects exact state transitions at configured times such as 10:00, 10:30, and 15:30, with a 16:00 force-close price.</p>
+    <div class="note"><strong>Data note.</strong> The Hong Kong lunch break is expected and is not treated as data corruption. The 16:00 close is essential because the strategies are day-trading policies and should end the day flat.</div>
+  </section>
+
+  <section>
+    <h2>4. Reinforcement-Learning Methodology</h2>
+    <h3>4.1 Portfolio value and reward</h3>
+    <p>The portfolio value, or NAV, is cash plus marked-to-market shares:</p>
+    <div class="equation"><em>V</em><sub>t</sub> = <em>C</em><sub>t</sub> + <em>q</em><sub>t</sub><em>P</em><sub>t</sub> <span class="eqno">(1)</span></div>
+    <p>where <em>V</em><sub>t</sub> is portfolio value, <em>C</em><sub>t</sub> is cash, <em>q</em><sub>t</sub> is the number of ETF shares, and <em>P</em><sub>t</sub> is the ETF price at decision time <em>t</em>.</p>
+    <p>The baseline reward is the log portfolio return:</p>
+    <div class="equation"><em>r</em><sub>t</sub> = ln&nbsp;(<em>V</em><sub>t+1</sub> / <em>V</em><sub>t</sub>) <span class="eqno">(2)</span></div>
+    <p>Using log returns is convenient because returns compound additively over time. However, the reward includes fee impact through <em>V</em><sub>t+1</sub>, so unnecessary trades are penalized naturally. Some research variants add extra penalties for fees or drawdown.</p>
+
+    <p>The fee-aware reward variant adds an explicit normalized fee penalty:</p>
+    <div class="equation"><em>r</em><sup>fee</sup><sub>t</sub> = ln&nbsp;(<em>V</em><sub>t+1</sub> / <em>V</em><sub>t</sub>) - &lambda;(<em>F</em><sub>t</sub> / <em>V</em><sub>t</sub>) <span class="eqno">(3)</span></div>
+    <p>where <em>F</em><sub>t</sub> is the transaction fee paid during the transition and &lambda; controls how strongly additional fee spending is penalized.</p>
+
+    <h3>4.2 Q-learning update</h3>
+    <p>Q-learning estimates the value of taking an action in a state and then following the best-known future action. The implemented update follows the standard tabular form described by Watkins and Dayan (1992):</p>
+    <div class="equation"><em>Q</em><sub>t</sub>(<em>s</em>, <em>a</em>) &larr; <em>Q</em><sub>t</sub>(<em>s</em>, <em>a</em>) + &alpha;[<em>r</em><sub>t</sub> + max<sub><em>a</em>&prime;</sub> <em>Q</em><sub>t+1</sub>(<em>s</em>&prime;, <em>a</em>&prime;) - <em>Q</em><sub>t</sub>(<em>s</em>, <em>a</em>)] <span class="eqno">(4)</span></div>
+    <p>The table has one slice per decision point. A 30-minute binary model has shape <span class="code">9 x 27 x 2</span>. A ternary model has three actions and therefore shape <span class="code">9 x states x 3</span>.</p>
+
+    <h3>4.3 State encoding</h3>
+    <p>The baseline state encoder uses three relative price features: current price versus yesterday's close, current price versus today's open, and current price versus the previous decision price. Each feature is mapped into three bins: below threshold, inside threshold, or above threshold. The baseline state index is:</p>
+    <div class="equation"><em>x</em><sub>close,t</sub> = <em>P</em><sub>t</sub>/<em>P</em><sub>close,t-1</sub> - 1,&nbsp;&nbsp;
+    <em>x</em><sub>open,t</sub> = <em>P</em><sub>t</sub>/<em>P</em><sub>open,t</sub> - 1,&nbsp;&nbsp;
+    <em>x</em><sub>prev,t</sub> = <em>P</em><sub>t</sub>/<em>P</em><sub>t-1</sub> - 1 <span class="eqno">(5)</span></div>
+    <div class="equation"><em>S</em><sub>t</sub> = 9<em>b</em>(<em>x</em><sub>close,t</sub>) + 3<em>b</em>(<em>x</em><sub>open,t</sub>) + <em>b</em>(<em>x</em><sub>prev,t</sub>) <span class="eqno">(6)</span></div>
+    <div class="equation"><em>b</em>(<em>x</em>) =
+      {{ 0 if <em>x</em> &lt; &tau;<sub>lower</sub>; &nbsp;
+         1 if &tau;<sub>lower</sub> &le; <em>x</em> &le; &tau;<sub>upper</sub>; &nbsp;
+         2 if <em>x</em> &gt; &tau;<sub>upper</sub> }} <span class="eqno">(7)</span></div>
+    <p>Thus, three features with three bins each produce <span class="code">3^3 = 27</span> states. Research encoders extend this with RSI, volatility, volume, or z-score normalization.</p>
+
+    <h3>4.4 Ternary actions</h3>
+    <p>Ternary-action bots use three position levels:</p>
+    <table>
+      <thead><tr><th>Action</th><th>Meaning</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>0</td><td>Cash</td><td>Avoid exposure when expected edge does not overcome fees.</td></tr>
+        <tr><td>1</td><td>Half position</td><td>Allow partial exposure when signal confidence is moderate.</td></tr>
+        <tr><td>2</td><td>Full position</td><td>Take maximum allowed exposure when signal is strongest.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>5. Threshold Selection</h2>
+    <p>The threshold values are not direct statistical optimizations; they are structured research heuristics. The broad ETF one-hour base thresholds are close &plusmn;1.50%, open &plusmn;1.00%, and previous-decision &plusmn;0.80%. For 30-minute bars, these were divided by 1.4 to account for the shorter decision interval. Therefore, broad ETF 30-minute thresholds are approximately close &plusmn;1.07%, open &plusmn;0.71%, and previous &plusmn;0.57%.</p>
+    <p>Leveraged ETFs receive wider thresholds because their intraday moves are larger. A 2x leveraged ETF uses an additional 1.8 multiplier, while a 3x leveraged ETF uses a 2.6 multiplier.</p>
+    <figure>
+      <img src="figures/threshold_scaling.png" alt="Threshold scaling chart">
+      <figcaption><strong>Figure 2.</strong> Threshold scaling heuristic across broad and leveraged ETFs. These values are intentionally simple and should be improved with future validation or empirical quantile calibration.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>6. Experiment Design and Selected Paper Bots</h2>
+    <p>The research sweep compared assets, reward functions, encoders, and action spaces. The selected paper bots were not chosen as final production winners, but as a small live-observation portfolio. This is important: paper trading is used to study execution behavior, state stability, fee pressure, and model behavior under real-time scheduling.</p>
+    <table>
+      <thead><tr><th>Bot</th><th>Asset</th><th>Reward</th><th>Encoder</th><th>Actions</th><th>Alpha</th><th>Sharpe</th><th>Trades</th><th>Total fees</th></tr></thead>
+      <tbody>{selected_rows}</tbody>
+    </table>
+    <figure>
+      <img src="figures/selected_alpha_fees.png" alt="Selected bot alpha and fees">
+      <figcaption><strong>Figure 3.</strong> Selected paper-bot candidates. Alpha is measured against buy-and-hold in the corresponding backtest window; fee load is shown as a percentage of initial HKD 1,000,000 capital.</figcaption>
+    </figure>
+    <figure>
+      <img src="figures/selected_nav_curves.png" alt="Selected bot NAV curves">
+      <figcaption><strong>Figure 4.</strong> Out-of-sample NAV curves for selected candidates. These curves are diagnostic and should not be interpreted as live profitability guarantees.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>7. Results and Diagnostic Interpretation</h2>
+    <p>The most important practical finding is that transaction cost dominates many intraday ETF decisions. A one-side fee of 20 basis points implies an approximate 40 basis-point round-trip hurdle. If a typical intraday price move is smaller than this hurdle, the optimal learned behavior may rationally be cash or very low turnover.</p>
+    <figure>
+      <img src="figures/fee_trade_scatter.png" alt="Trade count versus alpha">
+      <figcaption><strong>Figure 5.</strong> Trade count versus alpha across the research sweep. High trade count is not automatically good; it can simply create fee drag.</figcaption>
+    </figure>
+    <figure>
+      <img src="figures/reward_distribution.png" alt="Reward function alpha distribution">
+      <figcaption><strong>Figure 6.</strong> Distribution of alpha by reward function. Reward shaping changes behavior, but it does not remove the transaction-cost hurdle.</figcaption>
+    </figure>
+    <table>
+      <thead><tr><th>Experiment</th><th>Asset</th><th>Reward</th><th>Encoder</th><th>Actions</th><th>Alpha</th><th>Trades</th></tr></thead>
+      <tbody>{top_rows}</tbody>
+    </table>
+    <p>The table above lists the top research-sweep experiments available in the local <span class="code">results/</span> folder at report-generation time. These should be treated as hypotheses for review rather than final trading claims.</p>
+  </section>
+
+  <section>
+    <h2>8. Live Deployment Model</h2>
+    <p>The live paper bot loads a production YAML and a trained <span class="code">q_state.pkl</span> artifact. It builds the configured state encoder and agent, waits for the Hong Kong session, fetches current price data, computes a target quantity, and sends holding updates through the Quantphemes API. Quantphemes provides the broker-facing API used for portfolio and strategy interactions (Quantphemes, n.d.).</p>
+    <p>The live bot writes one JSON log line per decision. Each line includes the timestamp, state tuple, state index, action, price, target quantity, current quantity, dry-run flag, and status. This is important for auditability because each live action can be traced back to a state and Q-table decision.</p>
+  </section>
+
+  <section>
+    <h2>9. Limitations and Technical Critique</h2>
+    <p>This project is a research system, so discovering weak strategies or implementation risks is part of the outcome. The following limitations are the most important:</p>
+    <table>
+      <thead><tr><th>Limitation</th><th>Impact</th><th>Recommended response</th></tr></thead>
+      <tbody>
+        <tr><td>Transaction cost hurdle</td><td>Many intraday moves are too small to overcome 40 bps round-trip cost.</td><td>Keep fee-aware rewards, lower turnover, and compare against oracle and buy-and-hold.</td></tr>
+        <tr><td>State coverage</td><td>Expanded encoders can create sparse Q-table cells.</td><td>Track coverage; avoid deploying poorly visited policies.</td></tr>
+        <tr><td>Backtest/live drift risk</td><td>Live state construction must exactly match the training environment.</td><td>Add parity tests comparing live context to <span class="code">TradingEnv</span>.</td></tr>
+        <tr><td>Undocumented price endpoints</td><td>API behavior may change without warning.</td><td>Keep undocumented calls isolated and add robust error handling.</td></tr>
+        <tr><td>Tabular model capacity</td><td>Q-tables cannot learn rich nonlinear patterns.</td><td>Consider DQN only after backtest/live parity and data quality are stable.</td></tr>
+      </tbody>
+    </table>
+    <p>A particularly important critique is the need to keep live state construction identical to backtest state construction. If the live bot computes a feature differently from the training environment, the deployed Q-table may receive states it was not actually trained to handle. This type of mismatch is more dangerous than poor backtest performance because it can silently invalidate the experiment.</p>
+  </section>
+
+  <section>
+    <h2>10. Future Work</h2>
+    <p>The most useful next steps are engineering-first rather than model-complexity-first. Before adding deep reinforcement learning, the system should improve live/backtest parity tests, artifact/config compatibility checks, daily bot health reports, and broker reconciliation logs.</p>
+    <p>After these controls are stronger, DQN-style models could be explored, following the broader line of deep reinforcement learning research represented by Mnih et al. (2015). However, model complexity should be justified only if the simpler Q-table system is demonstrably limited by representation capacity rather than by data quality, fees, or execution assumptions.</p>
+  </section>
+
+  <section>
+    <h2>11. Conclusion</h2>
+    <p>The Quantphemes RL project implements a coherent research-to-paper-trading workflow. Its strongest engineering qualities are reproducible YAML experiments, modular plugins, explicit fee and portfolio accounting, structured diagnostics, and a deployable paper-bot path. The main scientific conclusion is cautious: tabular reinforcement learning is useful as an explainable experimental framework, but transaction costs, state coverage, and live parity are currently more important than adding more complex models.</p>
+  </section>
+
+  <section class="refs">
+    <h2>References</h2>
+    <p>Markowitz, H. (1952). Portfolio selection. <em>The Journal of Finance, 7</em>(1), 77-91. https://doi.org/10.2307/2975974</p>
+    <p>Mnih, V., Kavukcuoglu, K., Silver, D., Rusu, A. A., Veness, J., Bellemare, M. G., Graves, A., Riedmiller, M., Fidjeland, A. K., Ostrovski, G., Petersen, S., Beattie, C., Sadik, A., Antonoglou, I., King, H., Kumaran, D., Wierstra, D., Legg, S., &amp; Hassabis, D. (2015). Human-level control through deep reinforcement learning. <em>Nature, 518</em>(7540), 529-533. https://doi.org/10.1038/nature14236</p>
+    <p>Quantphemes. (n.d.). <em>Quantphemes API documentation</em>. Retrieved June 9, 2026, from https://api.quantphemes.com/swagger-ui/index.html</p>
+    <p>Sharpe, W. F. (1966). Mutual fund performance. <em>The Journal of Business, 39</em>(1), 119-138. https://doi.org/10.1086/294846</p>
+    <p>Sutton, R. S., &amp; Barto, A. G. (2018). <em>Reinforcement learning: An introduction</em> (2nd ed.). MIT Press.</p>
+    <p>Watkins, C. J. C. H., &amp; Dayan, P. (1992). Q-learning. <em>Machine Learning, 8</em>, 279-292. https://doi.org/10.1007/BF00992698</p>
+    <p>Webull. (n.d.). <em>Market Data API overview</em>. Retrieved June 9, 2026, from https://developer.webull.hk/apis/docs/market-data-api/overview/</p>
+  </section>
+</body>
+</html>
+"""
+
+
+def esc(value: Any) -> str:
+    return html.escape(str(value))
+
+
+if __name__ == "__main__":
+    main()

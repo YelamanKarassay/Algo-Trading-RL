@@ -1,0 +1,12 @@
+Federated Q-table merge report
+Generated UTC: 2026-05-13T06:53:28.262389+00:00
+Newly learned cells: 1
+newly_learned: [(1, 2, 0)]
+Cells changed >10% from ours: 2
+changed_gt_10pct: [(0, 1, 1), (1, 2, 0)]
+Max absolute Q change: 5
+Pre-merge coordination checklist:
+- Reward function aligned (log_return on both sides)
+- Fee model identical
+- State encoding identical (three_feature with same thresholds)
+- Decision times identical

@@ -65,3 +65,4 @@ nav:
       - Model Notes: research/index.md
   - Developer Guide:
       - Extending The Project: developer/index.md
+      - Technical Architecture Review: developer/technical-review.md

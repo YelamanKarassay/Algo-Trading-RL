@@ -1,0 +1,13 @@
+{
+  "last_action_at_decision": {
+    "10:00": 0,
+    "11:00": 0,
+    "13:00": 1,
+    "14:00": 0,
+    "15:00": 1
+  },
+  "prev_decision_price": 25.28,
+  "today_date": "2026-03-27",
+  "today_open": 25.06,
+  "yesterday_close": 25.22
+}

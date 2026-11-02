@@ -1,0 +1,30 @@
+{"action": 1, "current_qty": 0, "dry_run": true, "price": 100.3, "state": 13, "state_tuple": [100.3, 100.1, 100.1, 100.3], "status": "dry_run", "target_qty": 9500, "timestamp": "2026-05-13T06:45:08.860307+00:00"}
+{"action": 0, "current_qty": 0, "dry_run": true, "price": 100.5, "state": 13, "state_tuple": [100.5, 100.1, 100.1, 100.5], "status": "heartbeat", "target_qty": 0, "timestamp": "2026-05-13T06:45:08.860990+00:00"}
+{"action": 0, "current_qty": 0, "dry_run": true, "price": 100.7, "state": 13, "state_tuple": [100.7, 100.1, 100.1, 100.7], "status": "heartbeat", "target_qty": 0, "timestamp": "2026-05-13T06:45:08.861295+00:00"}
+{"action": 0, "current_qty": 0, "dry_run": true, "price": 100.9, "state": 13, "state_tuple": [100.9, 100.1, 100.1, 100.9], "status": "heartbeat", "target_qty": 0, "timestamp": "2026-05-13T06:45:08.861625+00:00"}
+{"action": 0, "current_qty": 0, "dry_run": true, "price": 101.1, "state": 13, "state_tuple": [101.1, 100.1, 100.1, 101.1], "status": "heartbeat", "target_qty": 0, "timestamp": "2026-05-13T06:45:08.861833+00:00"}
+{"status": "closing", "timestamp": "2026-05-13T06:45:08.861998+00:00"}
+{"action": 0, "current_qty": 0, "dry_run": true, "price": 100.3, "state": 13, "state_tuple": [100.3, 100.1, 101.3, 100.3], "status": "heartbeat", "target_qty": 0, "timestamp": "2026-05-13T06:48:19.894962+00:00"}
+{"action": 0, "current_qty": 0, "dry_run": true, "price": 100.5, "state": 13, "state_tuple": [100.5, 100.1, 101.3, 100.5], "status": "heartbeat", "target_qty": 0, "timestamp": "2026-05-13T06:48:19.895512+00:00"}
+{"action": 1, "current_qty": 0, "dry_run": true, "price": 100.7, "state": 13, "state_tuple": [100.7, 100.1, 101.3, 100.7], "status": "dry_run", "target_qty": 9500, "timestamp": "2026-05-13T06:48:19.897156+00:00"}
+{"action": 0, "current_qty": 0, "dry_run": true, "price": 100.9, "state": 13, "state_tuple": [100.9, 100.1, 101.3, 100.9], "status": "heartbeat", "target_qty": 0, "timestamp": "2026-05-13T06:48:19.897360+00:00"}
+{"action": 1, "current_qty": 0, "dry_run": true, "price": 101.1, "state": 13, "state_tuple": [101.1, 100.1, 101.3, 101.1], "status": "dry_run", "target_qty": 9500, "timestamp": "2026-05-13T06:48:19.897624+00:00"}
+{"status": "closing", "timestamp": "2026-05-13T06:48:19.897757+00:00"}
+{"action": 0, "current_qty": 0, "dry_run": true, "price": 100.3, "state": 13, "state_tuple": [100.3, 100.1, 101.3, 100.3], "status": "heartbeat", "target_qty": 0, "timestamp": "2026-05-13T06:50:22.515835+00:00"}
+{"action": 0, "current_qty": 0, "dry_run": true, "price": 100.5, "state": 13, "state_tuple": [100.5, 100.1, 101.3, 100.5], "status": "heartbeat", "target_qty": 0, "timestamp": "2026-05-13T06:50:22.516336+00:00"}
+{"action": 0, "current_qty": 0, "dry_run": true, "price": 100.7, "state": 13, "state_tuple": [100.7, 100.1, 101.3, 100.7], "status": "heartbeat", "target_qty": 0, "timestamp": "2026-05-13T06:50:22.516639+00:00"}
+{"action": 0, "current_qty": 0, "dry_run": true, "price": 100.9, "state": 13, "state_tuple": [100.9, 100.1, 101.3, 100.9], "status": "heartbeat", "target_qty": 0, "timestamp": "2026-05-13T06:50:22.516925+00:00"}
+{"action": 0, "current_qty": 0, "dry_run": true, "price": 101.1, "state": 13, "state_tuple": [101.1, 100.1, 101.3, 101.1], "status": "heartbeat", "target_qty": 0, "timestamp": "2026-05-13T06:50:22.517113+00:00"}
+{"status": "closing", "timestamp": "2026-05-13T06:50:22.517283+00:00"}
+{"action": 1, "current_qty": 0, "dry_run": true, "price": 100.3, "state": 13, "state_tuple": [100.3, 100.1, 101.3, 100.3], "status": "dry_run", "target_qty": 9500, "timestamp": "2026-05-13T07:03:50.343616+00:00"}
+{"action": 0, "current_qty": 0, "dry_run": true, "price": 100.5, "state": 13, "state_tuple": [100.5, 100.1, 101.3, 100.5], "status": "heartbeat", "target_qty": 0, "timestamp": "2026-05-13T07:03:50.344202+00:00"}
+{"action": 0, "current_qty": 0, "dry_run": true, "price": 100.7, "state": 13, "state_tuple": [100.7, 100.1, 101.3, 100.7], "status": "heartbeat", "target_qty": 0, "timestamp": "2026-05-13T07:03:50.344505+00:00"}
+{"action": 0, "current_qty": 0, "dry_run": true, "price": 100.9, "state": 13, "state_tuple": [100.9, 100.1, 101.3, 100.9], "status": "heartbeat", "target_qty": 0, "timestamp": "2026-05-13T07:03:50.344914+00:00"}
+{"action": 0, "current_qty": 0, "dry_run": true, "price": 101.1, "state": 13, "state_tuple": [101.1, 100.1, 101.3, 101.1], "status": "heartbeat", "target_qty": 0, "timestamp": "2026-05-13T07:03:50.345134+00:00"}
+{"status": "closing", "timestamp": "2026-05-13T07:03:50.345366+00:00"}
+{"action": 0, "current_qty": 0, "dry_run": true, "price": 37.475, "state": 4, "state_tuple": [37.475, 37.9, 101.3, 37.475], "status": "heartbeat", "target_qty": 0, "timestamp": "2026-05-13T07:30:18.767122+00:00"}
+{"action": 0, "current_qty": 0, "dry_run": true, "price": 37.475, "state": 4, "state_tuple": [37.475, 37.9, 101.3, 37.475], "status": "heartbeat", "target_qty": 0, "timestamp": "2026-05-13T07:30:18.768427+00:00"}
+{"action": 1, "current_qty": 0, "dry_run": true, "price": 37.375, "state": 4, "state_tuple": [37.375, 37.9, 101.3, 37.375], "status": "dry_run", "target_qty": 26500, "timestamp": "2026-05-13T07:30:18.769032+00:00"}
+{"action": 0, "current_qty": 0, "dry_run": true, "price": 37.3, "state": 4, "state_tuple": [37.3, 37.9, 101.3, 37.3], "status": "heartbeat", "target_qty": 0, "timestamp": "2026-05-13T07:30:18.769608+00:00"}
+{"action": 1, "current_qty": 0, "dry_run": true, "price": 37.425, "state": 4, "state_tuple": [37.425, 37.9, 101.3, 37.425], "status": "dry_run", "target_qty": 26500, "timestamp": "2026-05-13T07:30:18.770210+00:00"}
+{"status": "closing", "timestamp": "2026-05-13T07:30:18.770333+00:00"}

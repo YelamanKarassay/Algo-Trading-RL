@@ -1,0 +1,29 @@
+{
+  "alpha_vs_bh": -0.001903800000000011,
+  "baselines": {
+    "always_long": {
+      "final_nav": 1005517.6000000001,
+      "num_trades": 4,
+      "return": 0.005517600000000122,
+      "total_fees": 7926.8
+    },
+    "buy_and_hold": {
+      "final_nav": 1005517.6000000001,
+      "num_trades": 4,
+      "return": 0.005517600000000122,
+      "total_fees": 7926.8
+    },
+    "random_binary": {
+      "final_nav": 997746.6,
+      "num_trades": 6,
+      "return": -0.002253400000000072,
+      "total_fees": 11905.4
+    }
+  },
+  "final_nav": 1003613.8,
+  "num_trades": 4,
+  "pct_states_visited": 0.07407407407407407,
+  "return": 0.0036138000000001114,
+  "sharpe_vs_bh": -70.85209947492513,
+  "total_fees": 7934.4
+}

@@ -1,0 +1,16 @@
+/opt/anaconda3/lib/python3.12/site-packages/pandas/core/computation/expressions.py:23: UserWarning: Pandas requires version '2.10.2' or newer of 'numexpr' (version '2.8.7' currently installed).
+  from pandas.core.computation.check import NUMEXPR_INSTALLED
+/opt/anaconda3/lib/python3.12/site-packages/pandas/core/arrays/masked.py:56: UserWarning: Pandas requires version '1.4.2' or newer of 'bottleneck' (version '1.3.7' currently installed).
+  from pandas.core import (
+/opt/anaconda3/lib/python3.12/site-packages/pandas/core/computation/expressions.py:23: UserWarning: Pandas requires version '2.10.2' or newer of 'numexpr' (version '2.8.7' currently installed).
+  from pandas.core.computation.check import NUMEXPR_INSTALLED
+/opt/anaconda3/lib/python3.12/site-packages/pandas/core/arrays/masked.py:56: UserWarning: Pandas requires version '1.4.2' or newer of 'bottleneck' (version '1.3.7' currently installed).
+  from pandas.core import (
+{"action": 1, "current_qty": 0, "dry_run": false, "price": 26.32, "state": 13, "state_tuple": [26.32, 26.3, 26.52, 26.32], "status": "target_changed", "target_qty": 37500, "timestamp": "2026-05-15T03:00:01.817629+00:00"}
+{"action": 1, "current_qty": 37500, "dry_run": false, "price": 26.34, "state": 13, "state_tuple": [26.34, 26.3, 26.52, 26.34], "status": "heartbeat", "target_qty": 37500, "timestamp": "2026-05-15T03:30:01.612202+00:00"}
+{"action": 1, "current_qty": 37500, "dry_run": false, "price": 26.22, "state": 4, "state_tuple": [26.22, 26.3, 26.52, 26.22], "status": "heartbeat", "target_qty": 37500, "timestamp": "2026-05-15T05:30:01.961627+00:00"}
+{"action": 1, "current_qty": 37500, "dry_run": false, "price": 26.08, "state": 1, "state_tuple": [26.08, 26.3, 26.52, 26.08], "status": "heartbeat", "target_qty": 37500, "timestamp": "2026-05-15T06:00:01.571786+00:00"}
+{"action": 1, "current_qty": 37500, "dry_run": false, "price": 26.08, "state": 1, "state_tuple": [26.08, 26.3, 26.52, 26.08], "status": "heartbeat", "target_qty": 37500, "timestamp": "2026-05-15T06:30:01.603937+00:00"}
+{"action": 1, "current_qty": 37500, "dry_run": false, "price": 26.14, "state": 4, "state_tuple": [26.14, 26.3, 26.52, 26.14], "status": "heartbeat", "target_qty": 37500, "timestamp": "2026-05-15T07:00:01.612837+00:00"}
+{"action": 1, "current_qty": 37500, "dry_run": false, "price": 26.2, "state": 4, "state_tuple": [26.2, 26.3, 26.52, 26.2], "status": "heartbeat", "target_qty": 37500, "timestamp": "2026-05-15T07:30:01.664534+00:00"}
+{"current_qty": 37500, "dry_run": false, "price": 26.14, "status": "force_close", "target_qty": 0, "timestamp": "2026-05-15T08:00:01.759518+00:00"}
