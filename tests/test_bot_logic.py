@@ -146,6 +146,31 @@ def test_dry_run_does_not_patch() -> None:
     assert client.patches == []
 
 
+def test_decision_context_uses_previous_decision_price() -> None:
+    client = MockClient(cash=1_000_000.0, qty=0)
+    runtime = RuntimeState(
+        today_open=20.0,
+        yesterday_close=19.0,
+        prev_decision_price=20.5,
+    )
+
+    entry = handle_decision(
+        client=client,
+        strategy_id="strategy",
+        cfg=load_config("experiments/production_2800.yaml"),
+        agent=FixedAgent(0),
+        encoder=FixedEncoder(),
+        runtime=runtime,
+        decision_time="11:30",
+        decision_index=1,
+        price=21.0,
+        dry_run=True,
+    )
+
+    assert entry["state_tuple"] == [21.0, 20.0, 19.0, 20.5]
+    assert runtime.prev_decision_price == 21.0
+
+
 def test_force_close_patches_zero_when_live() -> None:
     client = MockClient(cash=0.0, qty=49_500)
 

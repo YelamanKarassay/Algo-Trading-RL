@@ -24,6 +24,8 @@ The Q-table stores action values by decision point and state. During live tradin
 | `RL_FACOV` | `7226.HK` fee-aware + z-score ternary state | Watch fees; backtest fee ratio was close to the kill threshold |
 | `RL_BROAD_A` | `2800.HK` fee-aware + z-score ternary state | Broad HSI benchmark candidate |
 | `RL_BROAD_B` | `2828.HK` log-return + volatility ternary state | Federated-partner asset candidate |
+| `GROUPMATE_2800_1H` | `2800.HK` QP-spec 1-hour three-feature binary state | Imported from groupmate artifact |
+| `GROUPMATE_7226_1H` | `7226.HK` QP-spec 1-hour three-feature binary state | Imported from groupmate artifact, lot size 100 |
 
 The `7299.HK` candidates were removed from live paper deployment because the broker API rejected the symbol for trading, even though price reads were available.
 

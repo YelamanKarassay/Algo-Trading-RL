@@ -40,7 +40,7 @@ The same core abstractions drive both offline experiments and live execution. La
 
 ## Active Paper Deployment
 
-As of the current stable deployment, Azure runs five paper-trading bots. Each bot has its own Quantphemes portfolio/strategy IDs in `.env`, its own `production_rl_*.yaml`, its own Q-table artifact, and its own JSON log directory.
+As of the current stable deployment, Azure runs five paper-trading bots and the repo is prepared for two additional groupmate 1-hour bots. Each bot has its own Quantphemes portfolio/strategy IDs in `.env`, its own production YAML, its own Q-table artifact, and its own JSON log directory.
 
 | Bot | Asset | Experiment Config | Status |
 |---|---|---|---|
@@ -49,6 +49,8 @@ As of the current stable deployment, Azure runs five paper-trading bots. Each bo
 | `RL_FACOV` | `7226.HK` | `research_7226_30m_fee_aware_zscore_bins_ternary` | Active, watch fees |
 | `RL_BROAD_A` | `2800.HK` | `research_2800_30m_fee_aware_zscore_bins_ternary` | Active |
 | `RL_BROAD_B` | `2828.HK` | `research_2828_30m_log_return_with_volatility_ternary` | Active |
+| `GROUPMATE_2800_1H` | `2800.HK` | `production_groupmate_2800_1h` | Ready once IDs are added |
+| `GROUPMATE_7226_1H` | `7226.HK` | `production_groupmate_7226_1h` | Ready once IDs are added |
 
 The older `RL_PRIME`, `RL_BIAS`, and `RL_FULLCOV` deployments were halted because Quantphemes rejected `7299.HK` as outside the tradable symbol list.
 
@@ -67,6 +69,10 @@ The older `RL_PRIME`, `RL_BIAS`, and `RL_FULLCOV` deployments were halted becaus
 -   **Operating the bot**
 
     Follow the [Live Trading Runbook](operations/runbook.md) before touching live mode.
+
+-   **Meeting materials**
+
+    Open the [Quantphemes meeting report and presentation](meeting/index.md).
 
 -   **Extending the system**
 

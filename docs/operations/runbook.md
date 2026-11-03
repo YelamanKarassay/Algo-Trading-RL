@@ -27,6 +27,10 @@ STRATEGY_RL_BROAD_A_ID=<copy-master strategy id>
 PORTFOLIO_RL_BROAD_A_ID=<portfolio id>
 STRATEGY_RL_BROAD_B_ID=<copy-master strategy id>
 PORTFOLIO_RL_BROAD_B_ID=<portfolio id>
+STRATEGY_GROUPMATE_2800_1H_ID=<copy-master strategy id>
+PORTFOLIO_GROUPMATE_2800_1H_ID=<portfolio id>
+STRATEGY_GROUPMATE_7226_1H_ID=<copy-master strategy id>
+PORTFOLIO_GROUPMATE_7226_1H_ID=<portfolio id>
 ```
 
 ## Pre-Live Checklist
@@ -110,6 +114,8 @@ The Azure deployment runs five active services:
 | `quantphemes-rl-facov` | `RL_FACOV` | `experiments/production_rl_facov.yaml` | `artifacts/logs/rl_facov/` |
 | `quantphemes-rl-broad-a` | `RL_BROAD_A` | `experiments/production_rl_broad_a.yaml` | `artifacts/logs/rl_broad_a/` |
 | `quantphemes-rl-broad-b` | `RL_BROAD_B` | `experiments/production_rl_broad_b.yaml` | `artifacts/logs/rl_broad_b/` |
+| `quantphemes-groupmate-2800-1h` | `GROUPMATE_2800_1H` | `experiments/production_groupmate_2800_1h.yaml` | `artifacts/logs/groupmate_2800_1h/` |
+| `quantphemes-groupmate-7226-1h` | `GROUPMATE_7226_1H` | `experiments/production_groupmate_7226_1h.yaml` | `artifacts/logs/groupmate_7226_1h/` |
 
 The retired `quantphemes-rl-prime`, `quantphemes-rl-bias`, and `quantphemes-rl-fullcov` services should stay stopped because `7299.HK` is not currently tradable through Quantphemes.
 
@@ -144,6 +150,8 @@ sudo systemctl status \
   quantphemes-rl-facov \
   quantphemes-rl-broad-a \
   quantphemes-rl-broad-b \
+  quantphemes-groupmate-2800-1h \
+  quantphemes-groupmate-7226-1h \
   --no-pager
 ```
 
@@ -155,7 +163,9 @@ sudo systemctl stop \
   quantphemes-rl-vol \
   quantphemes-rl-facov \
   quantphemes-rl-broad-a \
-  quantphemes-rl-broad-b
+  quantphemes-rl-broad-b \
+  quantphemes-groupmate-2800-1h \
+  quantphemes-groupmate-7226-1h
 ```
 
 Restart after code or model update:
@@ -166,7 +176,9 @@ sudo systemctl restart \
   quantphemes-rl-vol \
   quantphemes-rl-facov \
   quantphemes-rl-broad-a \
-  quantphemes-rl-broad-b
+  quantphemes-rl-broad-b \
+  quantphemes-groupmate-2800-1h \
+  quantphemes-groupmate-7226-1h
 ```
 
 ## Monitoring
@@ -207,3 +219,14 @@ sudo systemctl restart quantphemes-bot
 ```
 
 For multi-bot code rollback, restart the five active `quantphemes-rl-*` services instead of the legacy `quantphemes-bot` service.
+
+## Groupmate Bot Artifacts
+
+The two imported groupmate bots are normalized into our standard live-bot path:
+
+| Bot | Required artifact | Required data file |
+|---|---|---|
+| `GROUPMATE_2800_1H` | `artifacts/deploy/groupmate_2800_1h_q_state.pkl` | `data/raw/groupmate_2800_hk_5min_merged.csv` |
+| `GROUPMATE_7226_1H` | `artifacts/deploy/groupmate_7226_1h_q_state.pkl` | `data/raw/groupmate_7226_hk_5min.csv` |
+
+These files are intentionally ignored by Git. Copy them onto the server before starting the groupmate services.

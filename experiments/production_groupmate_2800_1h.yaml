@@ -1,0 +1,29 @@
+inherits: _baseline.yaml
+name: production_groupmate_2800_1h
+description: Paper deployment for groupmate RL Q-Learning 1, 2800.HK 1h QP-spec binary Q-table.
+data:
+  source: csv
+  path: data/raw/groupmate_2800_hk_5min_merged.csv
+  symbol: 2800.HK
+  start: 2018-04-03
+  end: 2026-03-27
+market:
+  decision_times: ["10:00", "11:00", "13:00", "14:00", "15:00"]
+  force_close_time: "15:55"
+  lot_size: 500
+state:
+  encoder: three_feature
+  kwargs:
+    thresholds:
+      delta_close: [-0.010, 0.010]
+      delta_open: [-0.007, 0.007]
+      delta_prev: [-0.005, 0.005]
+agent:
+  kwargs:
+    num_decision_points: 5
+    num_states: 27
+    num_actions: 2
+artifacts:
+  q_state_path: artifacts/deploy/groupmate_2800_1h_q_state.pkl
+  log_dir: artifacts/logs/groupmate_2800_1h/
+  runtime_state_path: artifacts/runtime_state_groupmate_2800_1h.json

@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quantphemes RL - Meeting Presentation</title>
+  <style>
+    :root {
+      --bg: #0f1916;
+      --ink: #17201d;
+      --muted: #617069;
+      --paper: #f7f8f4;
+      --card: #ffffff;
+      --line: #dce2da;
+      --green: #136f48;
+      --blue: #315ca8;
+      --amber: #b66b18;
+      --mint: #bce6d1;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .deck {
+      min-height: 100vh;
+      display: grid;
+      gap: 28px;
+      padding: 28px;
+    }
+    .slide {
+      min-height: calc(100vh - 56px);
+      background: var(--paper);
+      border-radius: 22px;
+      padding: 54px;
+      display: grid;
+      align-content: center;
+      box-shadow: 0 24px 80px rgba(0,0,0,.24);
+      position: relative;
+      overflow: hidden;
+    }
+    .slide.cover {
+      color: white;
+      background:
+        linear-gradient(90deg, rgba(8, 25, 19, .94), rgba(8, 25, 19, .55)),
+        url("https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1800&q=80");
+      background-size: cover;
+      background-position: center;
+    }
+    .slide.cover p { color: #dff0e6; }
+    .num {
+      position: absolute;
+      top: 26px;
+      right: 34px;
+      color: #839088;
+      font-weight: 800;
+      font-size: 13px;
+    }
+    h1, h2, h3 { margin: 0 0 18px; line-height: 1.04; letter-spacing: 0; }
+    h1 { font-size: clamp(48px, 8vw, 104px); max-width: 960px; }
+    h2 { font-size: clamp(36px, 5vw, 68px); max-width: 1000px; }
+    h3 { font-size: 24px; }
+    p, li { font-size: 22px; line-height: 1.45; }
+    .lead { max-width: 880px; font-size: 26px; }
+    .eyebrow { color: var(--green); text-transform: uppercase; letter-spacing: .16em; font-size: 13px; font-weight: 900; margin-bottom: 18px; }
+    .cover .eyebrow { color: var(--mint); }
+    .grid { display: grid; gap: 20px; }
+    .two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 24px;
+      min-height: 150px;
+    }
+    .metric { font-size: 50px; font-weight: 900; color: var(--green); }
+    .label { color: var(--muted); font-size: 14px; font-weight: 850; text-transform: uppercase; letter-spacing: .08em; }
+    table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--line); }
+    th, td { padding: 13px 14px; border-bottom: 1px solid var(--line); text-align: left; font-size: 17px; }
+    th { color: #25312d; background: #eef3ee; font-size: 13px; text-transform: uppercase; letter-spacing: .07em; }
+    .pill { display: inline-flex; padding: 5px 10px; border-radius: 999px; font-size: 13px; font-weight: 900; }
+    .run { color: #075d3a; background: #dff4e8; }
+    .ready { color: #244a9c; background: #e7edff; }
+    .warn { color: #8a4a05; background: #fff0d4; }
+    .bars { display: grid; gap: 16px; margin-top: 10px; }
+    .bar-row { display: grid; grid-template-columns: 180px 1fr 95px; gap: 16px; align-items: center; font-size: 18px; font-weight: 700; }
+    .track { height: 22px; background: #e0e6df; border-radius: 999px; overflow: hidden; }
+    .fill { height: 100%; background: linear-gradient(90deg, var(--green), #61bd87); border-radius: 999px; }
+    .fill.blue { background: linear-gradient(90deg, var(--blue), #78a0e3); }
+    .fill.amber { background: linear-gradient(90deg, var(--amber), #e7b75d); }
+    .small p, .small li { font-size: 18px; }
+    a { color: var(--blue); text-decoration: none; }
+    code { background: #e8eee8; padding: 2px 6px; border-radius: 5px; }
+    pre {
+      margin: 0;
+      padding: 20px;
+      overflow-x: auto;
+      background: #10231c;
+      color: #edf8f1;
+      border-radius: 14px;
+      border: 1px solid #254b3b;
+      font-size: 16px;
+      line-height: 1.45;
+    }
+    pre code { background: transparent; color: inherit; padding: 0; border-radius: 0; }
+    @media (max-width: 900px) {
+      .slide { padding: 30px; }
+      .two, .three, .four { grid-template-columns: 1fr; }
+      .bar-row { grid-template-columns: 1fr; }
+      p, li { font-size: 18px; }
+    }
+    @media print {
+      @page { size: A4 landscape; margin: 0; }
+      body { background: white; }
+      .deck { padding: 0; gap: 0; }
+      .slide {
+        width: 297mm;
+        height: 210mm;
+        min-height: 0;
+        border-radius: 0;
+        box-shadow: none;
+        page-break-after: always;
+        break-after: page;
+        padding: 22mm;
+        overflow: hidden;
+      }
+      h1 { font-size: 58px; }
+      h2 { font-size: 38px; }
+      h3 { font-size: 18px; margin-bottom: 8px; }
+      p, li { font-size: 15px; line-height: 1.35; }
+      .lead { font-size: 22px; }
+      .metric { font-size: 34px; }
+      .card { min-height: 0; padding: 14px; }
+      th, td { padding: 7px 8px; font-size: 11px; }
+      th { font-size: 9px; }
+      pre { font-size: 10px; line-height: 1.32; padding: 12px; }
+      .small p, .small li { font-size: 13px; }
+      .bar-row { font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="deck">
+    <section class="slide cover">
+      <div class="eyebrow">Quantphemes RL</div>
+      <h1>Q-Learning Paper-Trading Fleet</h1>
+      <p class="lead">A reproducible research, diagnostics, and live deployment system for Hong Kong ETF trading strategies.</p>
+    </section>
+
+    <section class="slide">
+      <span class="num">01</span>
+      <div class="eyebrow">Why This Project Exists</div>
+      <h2>One workflow from hypothesis to paper trading</h2>
+      <div class="grid three">
+        <div class="card"><div class="metric">Research</div><p>Run repeatable historical experiments across ETF assets, intervals, features, rewards, and agents.</p></div>
+        <div class="card"><div class="metric">Explain</div><p>Use reports, oracle checks, coverage, and fee diagnostics to understand why the model behaves a certain way.</p></div>
+        <div class="card"><div class="metric">Deploy</div><p>Promote selected <code>q_state.pkl</code> artifacts to paper trading through the Quantphemes API.</p></div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <span class="num">02</span>
+      <div class="eyebrow">Current Status</div>
+      <h2>Seven-bot paper fleet integrated in one repo</h2>
+      <div class="grid four">
+        <div class="card"><div class="label">Bots</div><div class="metric">7</div><p>Five selected strategies plus two collaborative 1-hour imports.</p></div>
+        <div class="card"><div class="label">Assets</div><div class="metric">3</div><p>2800.HK, 2828.HK, and 7226.HK.</p></div>
+        <div class="card"><div class="label">Intervals</div><div class="metric">30m/1h</div><p>Five internal paper models are 30-minute; two collaborative models are 1-hour.</p></div>
+        <div class="card"><div class="label">Core tests</div><div class="metric">85</div><p>Full suite passes with lint and docs build.</p></div>
+        <div class="card"><div class="label">Deployment</div><div class="metric">Azure</div><p>Systemd services with JSON decision logs.</p></div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <span class="num">03</span>
+      <div class="eyebrow">Bot Portfolio</div>
+      <h2>Different hypotheses run side by side</h2>
+      <table>
+        <thead><tr><th>Bot</th><th>Asset</th><th>Interval</th><th>Reward / Encoder</th><th>Actions</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>RL_CROSS</td><td>7226.HK</td><td>30m</td><td>drawdown / three_feature</td><td>cash/full</td><td><span class="pill run">paper running</span></td></tr>
+          <tr><td>RL_VOL</td><td>7226.HK</td><td>30m</td><td>drawdown / volatility</td><td>cash/full</td><td><span class="pill run">paper running</span></td></tr>
+          <tr><td>RL_FACOV</td><td>7226.HK</td><td>30m</td><td>fee-aware / z-score</td><td>cash/half/full</td><td><span class="pill warn">watch fees</span></td></tr>
+          <tr><td>RL_BROAD_A</td><td>2800.HK</td><td>30m</td><td>fee-aware / z-score</td><td>cash/half/full</td><td><span class="pill run">paper running</span></td></tr>
+          <tr><td>RL_BROAD_B</td><td>2828.HK</td><td>30m</td><td>log-return / volatility</td><td>cash/half/full</td><td><span class="pill run">paper running</span></td></tr>
+          <tr><td>Collaborative HSI 1H</td><td>2800.HK</td><td>1h</td><td>QP-spec / three_feature</td><td>cash/full</td><td><span class="pill ready">OOS -4.77%</span></td></tr>
+          <tr><td>Collaborative Leverage 1H</td><td>7226.HK</td><td>1h</td><td>QP-spec / three_feature</td><td>cash/full</td><td><span class="pill ready">OOS -3.12%</span></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="slide">
+      <span class="num">04</span>
+      <div class="eyebrow">Bot Interpretation</div>
+      <h2>What each live candidate is meant to teach us</h2>
+      <table>
+        <thead><tr><th>Bot</th><th>What it teaches us</th></tr></thead>
+        <tbody>
+          <tr><td>RL_CROSS</td><td>Simple 30m 7226.HK leveraged baseline: compact state, binary action, drawdown control.</td></tr>
+          <tr><td>RL_VOL</td><td>Tests whether 7226.HK decisions improve when the policy knows the current volatility regime.</td></tr>
+          <tr><td>RL_FACOV</td><td>Ternary 7226.HK model with fee-aware reward; useful for position sizing but watched for turnover.</td></tr>
+          <tr><td>RL_BROAD_A</td><td>30m 2800.HK broad benchmark that shows behavior on lower-volatility HSI exposure.</td></tr>
+          <tr><td>RL_BROAD_B</td><td>30m 2828.HK broad/federated comparison using volatility-aware state and ternary actions.</td></tr>
+          <tr><td>Collaborative HSI 1H</td><td>External 1h 2800.HK benchmark; OOS net -4.77% over 750 days, alpha -6.46 pp vs B&amp;H.</td></tr>
+          <tr><td>Collaborative Leverage 1H</td><td>External 1h 7226.HK benchmark; OOS net -3.12% over 450 days, alpha -3.56 pp vs B&amp;H.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="slide">
+      <span class="num">05</span>
+      <div class="eyebrow">Collaborative 1H Test Results</div>
+      <h2>Different windows, useful external benchmarks</h2>
+      <table>
+        <thead><tr><th>Strategy</th><th>Period</th><th>Days</th><th>Net Return</th><th>Fees</th><th>Round Trips</th><th>Win Rate</th><th>Alpha vs B&amp;H</th></tr></thead>
+        <tbody>
+          <tr><td>Collaborative HSI 1H</td><td>2022-05-13 → 2025-06-09</td><td>750</td><td>-4.77%</td><td>HKD 53,801</td><td>491</td><td>24.24%</td><td>-6.46 pp</td></tr>
+          <tr><td>Collaborative Leverage 1H</td><td>2024-04-05 → 2026-02-06</td><td>450</td><td>-3.12%</td><td>HKD 29,372</td><td>288</td><td>15.97%</td><td>-3.56 pp</td></tr>
+        </tbody>
+      </table>
+      <p>These are not same-window comparisons with the 30-minute grid. They show that the 1-hour imported policies are compatible, but their own out-of-sample tests were net negative after fees.</p>
+    </section>
+
+    <section class="slide">
+      <span class="num">06</span>
+      <div class="eyebrow">Leveraged ETF Rationale</div>
+      <h2>Why more paper slots use 7226.HK</h2>
+      <div class="grid two">
+        <div class="card"><h3>Fee hurdle</h3><p>The round trip cost is about 40 bps. Many 2800.HK intraday moves are smaller than that, so cash can be a rational learned action.</p></div>
+        <div class="card"><h3>Research signal</h3><p>Leveraged ETFs can move more intraday, giving the Q-table more room to learn whether exposure is worth the fee.</p></div>
+      </div>
+      <p>2800.HK remains the broad HSI benchmark. Leveraged ETFs are used more heavily for paper observation because their larger movement makes strategy behavior easier to distinguish.</p>
+    </section>
+
+    <section class="slide">
+      <span class="num">07</span>
+      <div class="eyebrow">Backtest Snapshot</div>
+      <h2>Selected models beat buy-and-hold in the test window after fees</h2>
+      <div class="grid two">
+        <div class="card">
+          <h3>Alpha vs B&amp;H</h3>
+          <div class="bars">
+            <div class="bar-row"><span>RL_CROSS</span><div class="track"><div class="fill" style="width:100%"></div></div><span>+2.56%</span></div>
+            <div class="bar-row"><span>RL_VOL</span><div class="track"><div class="fill" style="width:100%"></div></div><span>+2.56%</span></div>
+            <div class="bar-row"><span>RL_FACOV</span><div class="track"><div class="fill amber" style="width:100%"></div></div><span>+2.56%</span></div>
+            <div class="bar-row"><span>RL_BROAD_A</span><div class="track"><div class="fill blue" style="width:51%"></div></div><span>+1.29%</span></div>
+            <div class="bar-row"><span>RL_BROAD_B</span><div class="track"><div class="fill blue" style="width:51%"></div></div><span>+1.30%</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Trade Count</h3>
+          <div class="bars">
+            <div class="bar-row"><span>RL_CROSS</span><div class="track"><div class="fill" style="width:31%"></div></div><span>30</span></div>
+            <div class="bar-row"><span>RL_VOL</span><div class="track"><div class="fill" style="width:44%"></div></div><span>42</span></div>
+            <div class="bar-row"><span>RL_FACOV</span><div class="track"><div class="fill amber" style="width:100%"></div></div><span>96</span></div>
+            <div class="bar-row"><span>RL_BROAD_A</span><div class="track"><div class="fill blue" style="width:10%"></div></div><span>10</span></div>
+            <div class="bar-row"><span>RL_BROAD_B</span><div class="track"><div class="fill blue" style="width:19%"></div></div><span>18</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <span class="num">08</span>
+      <div class="eyebrow">Architecture</div>
+      <h2>Shared core, thin applications</h2>
+      <div class="grid three">
+        <div class="card"><h3>Config</h3><p>YAML plus Pydantic validation define the whole experiment or production bot.</p></div>
+        <div class="card"><h3>Plugins</h3><p>Data source, encoder, reward, and agent are selected through a registry, not hard-coded branches.</p></div>
+        <div class="card"><h3>Core</h3><p>TradingEnv, Portfolio, StateEncoder, RewardFunction, and Agent are shared by training and live execution.</p></div>
+      </div>
+      <p><strong>Flow:</strong> YAML config → registry → data/state/reward/agent → training report + Q-table → live bot → Quantphemes API.</p>
+    </section>
+
+    <section class="slide">
+      <span class="num">09</span>
+      <div class="eyebrow">Data and Configuration</div>
+      <h2>Strategy behavior is declared, validated, and reproducible</h2>
+      <div class="grid two">
+        <div class="card"><h3>Data sources</h3><p>The current research data mainly comes from Webull and Futu exports/downloads, normalized into HK-time bars.</p></div>
+        <div class="card"><h3>YAML configs</h3><p>Asset, date range, fee, decision times, encoder, reward, agent, and artifacts are visible in one file.</p></div>
+        <div class="card"><h3>Pydantic validation</h3><p>Bad config or malformed data fails early instead of silently entering training or live execution.</p></div>
+        <div class="card"><h3>Supported adapters</h3><p>Bloomberg XLSX is supported for future exports, but it was not the main source for the current paper fleet.</p></div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <span class="num">10</span>
+      <div class="eyebrow">YAML Reference</div>
+      <h2>A strategy is visible in one config file</h2>
+      <pre><code>name: production_rl_broad_a
+data:
+  source: csv
+  path: data/raw/2800_hk_30m_webull_futu.csv
+  symbol: 2800.HK
+market:
+  decision_times: ["10:00", "10:30", "11:00", "11:30", "13:30", "14:00", "14:30", "15:00", "15:30"]
+  fee_bps_one_side: 20
+state:
+  encoder: zscore_bins
+reward:
+  function: fee_aware
+agent:
+  type: qtable
+  kwargs:
+    num_actions: 3</code></pre>
+    </section>
+
+    <section class="slide">
+      <span class="num">11</span>
+      <div class="eyebrow">Plugin Registry</div>
+      <h2>New strategy ideas do not require rewriting the runner</h2>
+      <div class="grid four">
+        <div class="card"><h3>Data</h3><p><code>csv</code>, <code>futu</code>, <code>bloomberg</code></p></div>
+        <div class="card"><h3>State</h3><p><code>three_feature</code>, <code>zscore_bins</code>, <code>with_volatility</code>, <code>with_rsi</code></p></div>
+        <div class="card"><h3>Reward</h3><p><code>log_return</code>, <code>fee_aware</code>, <code>drawdown_penalty</code></p></div>
+        <div class="card"><h3>Agent</h3><p><code>qtable</code>, baselines, and future model plugins.</p></div>
+      </div>
+      <p>The runner asks the registry to build the selected components. This keeps the production path consistent as the research space grows.</p>
+    </section>
+
+    <section class="slide">
+      <span class="num">12</span>
+      <div class="eyebrow">Training Loop</div>
+      <h2>How a Q-table is produced</h2>
+      <div class="grid two">
+        <div class="card"><h3>Walk-forward training</h3><p>Historical days are split into training and test windows. Each training episode shuffles days and starts each day with a fresh portfolio.</p></div>
+        <div class="card"><h3>Decision steps</h3><p>At each decision time, the environment measures NAV before trade, executes action, applies fees, advances time, and computes reward.</p></div>
+        <div class="card"><h3>Q update</h3><p>The agent updates one cell: decision point, state, action. Visit counts determine the per-cell learning rate.</p></div>
+        <div class="card"><h3>Artifact output</h3><p>The selected result folder contains <code>q_state.pkl</code>, config snapshot, metrics, logs, and HTML diagnostics.</p></div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <span class="num">13</span>
+      <div class="eyebrow">Live Runtime</div>
+      <h2>How one paper decision is made</h2>
+      <ol>
+        <li>Fetch current price and broker cash/quantity.</li>
+        <li>Build market context: current price, open, previous close, previous decision price.</li>
+        <li>Encode context into a discrete state.</li>
+        <li>Read the Q-table row for this decision point and choose the greedy action.</li>
+        <li>Convert action into target quantity using lot size and available cash.</li>
+        <li>Patch Quantphemes holding and write one structured JSON log line.</li>
+      </ol>
+    </section>
+
+    <section class="slide">
+      <span class="num">14</span>
+      <div class="eyebrow">Collaborative Model Integration</div>
+      <h2>External Q-tables now run through the same code path</h2>
+      <div class="grid two">
+        <div class="card"><h3>Compatibility</h3><p>Both collaborative tables are <code>5 × 27 × 2</code> with visit counts and the same three-feature threshold structure.</p></div>
+        <div class="card"><h3>Conversion</h3><p>Their standalone pickle files were converted into our standard <code>QTableAgent.save</code> artifact format.</p></div>
+        <div class="card"><h3>Production configs</h3><p>Two YAMLs define asset, decision times, thresholds, artifact paths, and runtime log locations.</p></div>
+        <div class="card"><h3>Bug fix</h3><p>The live bot now uses previous decision price for <code>delta_prev</code>, not the current price.</p></div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <span class="num">15</span>
+      <div class="eyebrow">Framework Choices</div>
+      <h2>Why these tools?</h2>
+      <div class="grid two small">
+        <div class="card"><h3>Python, NumPy, Pandas</h3><p>Best fit for market data processing, vectorized metrics, and quick research iteration.</p></div>
+        <div class="card"><h3>Pydantic + YAML</h3><p>Readable experiment files with strict validation and inheritance.</p></div>
+        <div class="card"><h3>Pytest + Ruff</h3><p>Fast regression testing and style checks before deployment.</p></div>
+        <div class="card"><h3>MkDocs Material</h3><p>Searchable, polished documentation for mixed technical and non-technical readers.</p></div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <span class="num">16</span>
+      <div class="eyebrow">Trading Rules</div>
+      <h2>Financial assumptions are explicit and tested</h2>
+      <div class="grid three">
+        <div class="card"><div class="metric">20 bps</div><p>One-side transaction fee, applied only when position changes.</p></div>
+        <div class="card"><div class="metric">EOD</div><p>Live bot targets flat quantity near the close; each training day starts fresh.</p></div>
+        <div class="card"><div class="metric">Lot size</div><p>Target quantity respects exchange lot constraints and available cash.</p></div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <span class="num">17</span>
+      <div class="eyebrow">Diagnostics</div>
+      <h2>We diagnose the model, not only the final NAV</h2>
+      <div class="grid three">
+        <div class="card"><h3>Coverage</h3><p>Which decision/state/action cells were actually visited during training.</p></div>
+        <div class="card"><h3>Oracle</h3><p>Perfect-foresight upper bound under the same fee model.</p></div>
+        <div class="card"><h3>Signal Checks</h3><p>Feature bins, conditional returns, and mutual information.</p></div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <span class="num">18</span>
+      <div class="eyebrow">Live Operations</div>
+      <h2>Production-style deployment is observable and reversible</h2>
+      <div class="grid two">
+        <div class="card"><h3>Server</h3><p>Azure VM, Python virtual environment, one systemd service per bot, restart policy enabled.</p></div>
+        <div class="card"><h3>Logs</h3><p>One JSON line per decision: price, state tuple, action, target quantity, current quantity, and status.</p></div>
+        <div class="card"><h3>Secrets</h3><p>API key and portfolio/strategy IDs are in server-side <code>.env</code>, never committed.</p></div>
+        <div class="card"><h3>Rollback</h3><p>Stop a service, restore a previous Q-table, restart only that bot.</p></div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <span class="num">19</span>
+      <div class="eyebrow">Quantphemes API Integration</div>
+      <h2>Broker behavior shaped the deployment design</h2>
+      <ul>
+        <li>Documented endpoints are wrapped in <code>api_client/quantphemes.py</code>.</li>
+        <li>Undocumented price endpoints are isolated in <code>api_client/_undocumented.py</code>.</li>
+        <li>Holding PATCH calls are tested through a sync helper with mocked network tests.</li>
+        <li>Symbol tradeability is validated separately from price availability.</li>
+      </ul>
+    </section>
+
+    <section class="slide">
+      <span class="num">20</span>
+      <div class="eyebrow">Quality Controls</div>
+      <h2>Trading invariants are protected by tests</h2>
+      <div class="grid two">
+        <div class="card"><h3>Core tests</h3><p>Portfolio fees, environment reward timing, force-close behavior, Q-table updates, baselines, and registry loading.</p></div>
+        <div class="card"><h3>Live bot tests</h3><p>Target quantity sizing, dry-run safety, heartbeat behavior, runtime state recovery, and previous decision price state.</p></div>
+        <div class="card"><h3>Experiment tests</h3><p>Config inheritance, end-to-end smoke run, report rendering, oracle, signal diagnostics, and comparison tool.</p></div>
+        <div class="card"><h3>CI gates</h3><p><code>ruff check .</code>, <code>pytest -q</code>, and <code>mkdocs build --strict</code>.</p></div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <span class="num">21</span>
+      <div class="eyebrow">Documentation</div>
+      <h2>The project has a public knowledge base</h2>
+      <div class="grid two">
+        <div class="card"><h3>GitHub</h3><p><a href="https://github.com/YelamanKarassay/Algo-Trading-RL">github.com/YelamanKarassay/Algo-Trading-RL</a></p></div>
+        <div class="card"><h3>Docs Portal</h3><p><a href="https://yelamankarassay.github.io/Algo-Trading-RL/">yelamankarassay.github.io/Algo-Trading-RL/</a></p></div>
+      </div>
+      <p>The docs cover architecture, data requirements, experiment workflow, live runbook, API notes, research notes, and developer extension rules.</p>
+    </section>
+
+    <section class="slide">
+      <span class="num">22</span>
+      <div class="eyebrow">Current Boundaries</div>
+      <h2>What the report does and does not claim</h2>
+      <div class="grid two">
+        <div class="card"><h3>It claims</h3><p>The research-to-paper pipeline is implemented, tested, documented, and able to run multiple Q-table strategies.</p></div>
+        <div class="card"><h3>It does not claim</h3><p>The current paper strategies are production-profitable. Live observation and broker behavior still matter.</p></div>
+      </div>
+      <p>Backtests include fees, but they should be read as candidate filters and diagnostics, not final investment evidence.</p>
+    </section>
+
+    <section class="slide">
+      <span class="num">23</span>
+      <div class="eyebrow">Discussion Points for Quantphemes</div>
+      <h2>Platform clarifications that affect paper operation</h2>
+      <ul>
+        <li>Which HK ETFs are tradeable through paper and live broker routes?</li>
+        <li>How should we verify that a paper PATCH produced a visible order or holding change?</li>
+        <li>What are the exact strategy automation limits under the current plan?</li>
+        <li>Can Quantphemes provide clearer intraday historical endpoint access or export formats?</li>
+      </ul>
+    </section>
+
+    <section class="slide">
+      <span class="num">24</span>
+      <div class="eyebrow">Closing</div>
+      <h2>We have a working research-to-paper pipeline</h2>
+      <p class="lead">The project is ready for a serious technical discussion: what the models do, how the system is built, how paper decisions are generated, and where Quantphemes platform behavior shapes deployment.</p>
+    </section>
+  </main>
+</body>
+</html>
